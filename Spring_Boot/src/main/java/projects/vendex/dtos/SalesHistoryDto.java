@@ -7,5 +7,5 @@ import java.util.List;
 @Data
 public class SalesHistoryDto {
     @JsonProperty("sales_history")
-    private List<Float> salesHistory;
+    private List<Double> salesHistory;
 }
