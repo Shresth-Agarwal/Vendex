@@ -50,7 +50,9 @@ public class SecurityConfig {
                                 "/refreshToken",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/docs")
+                                "/docs",
+                                "/agent/**"
+                        )
                         .permitAll()
                         .anyRequest()
                         .authenticated())
