@@ -5,5 +5,6 @@ import org.springframework.stereotype.Repository;
 import projects.vendex.entities.PurchaseOrder;
 
 @Repository
-public interface PurchaseOrderRepository
-        extends JpaRepository<PurchaseOrder, Long> {}
+public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Long> {
+    boolean existsBySkuAndStatus(String sku, String status);
+}

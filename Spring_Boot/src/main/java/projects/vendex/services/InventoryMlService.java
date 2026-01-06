@@ -21,14 +21,15 @@ public class InventoryMlService {
                 .block();
     }
 
-    public Object getDecision(DecisionPayloadDto request) {
+    public InventoryDecisionDto getDecision(DecisionPayloadDto payload) {
         return inventoryMlWebClient.post()
                 .uri("/api/decision")
-                .bodyValue(request)
+                .bodyValue(payload)
                 .retrieve()
-                .bodyToMono(Object.class)
+                .bodyToMono(InventoryDecisionDto.class)
                 .block();
     }
+
 
     public ForecastAndDecisionResponseDto forecastAndDecide(ForecastAndDecideRequestDto request) {
 

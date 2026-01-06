@@ -2,9 +2,11 @@ package projects.vendex.services;
 
 import projects.vendex.dtos.*;
 import projects.vendex.entities.*;
+import projects.vendex.exceptions.NotFoundException;
 import projects.vendex.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import projects.vendex.util.InventoryAgentMapper;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -19,6 +21,9 @@ public class InventoryAgentService {
     private final ProductRepository productRepository;
     private final SalesRepository salesRepository;
     private final StockRepository stockRepository;
+    private final InventoryAgentMapper inventoryAgentMapper;
+    private final PurchaseOrderRepository purchaseOrderRepository;
+
 
     private static final int FORECAST_LOOKBACK_DAYS = 30;
 
@@ -28,7 +33,7 @@ public class InventoryAgentService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid SKU: " + sku));
 
         Stock stock = stockRepository.findById(sku)
-                .orElseThrow(() -> new IllegalStateException("Stock not found for SKU: " + sku));
+                .orElseThrow(() -> new NotFoundException("Stock not found for SKU: " + sku));
 
         LocalDate fromDate = LocalDate.now().minusDays(FORECAST_LOOKBACK_DAYS);
 
@@ -45,7 +50,7 @@ public class InventoryAgentService {
         List<Double> salesHistory =
                 dailySalesMap.entrySet().stream()
                         .sorted(Map.Entry.comparingByKey())
-                        .map(entry -> entry.getValue().doubleValue())
+                        .map(e -> e.getValue().doubleValue())
                         .toList();
 
         if (salesHistory.isEmpty()) {
@@ -58,23 +63,60 @@ public class InventoryAgentService {
         ForecastResponseDto forecastResponse =
                 inventoryMlService.getForecast(forecastRequest);
 
-        DecisionPayloadDto decisionPayload = new DecisionPayloadDto();
-        decisionPayload.setForecast(forecastResponse.getForecast());
-        decisionPayload.setConfidence(forecastResponse.getConfidence());
-        decisionPayload.setCurrentStock(stock.getOnHand());
-        decisionPayload.setUnitCost(product.getUnitCost());
+        DecisionPayloadDto decisionPayload =
+                inventoryAgentMapper.toDecisionPayloadDto(
+                        forecastResponse.getForecast(),
+                        forecastResponse.getConfidence(),
+                        stock,
+                        product
+                );
 
-        Object decision =
+        InventoryDecisionDto decision =
                 inventoryMlService.getDecision(decisionPayload);
 
+        if (decision.getQuantity() > 0) {
 
-        ForecastAndDecisionResponseDto response =
-                new ForecastAndDecisionResponseDto();
+            boolean alreadyPending =
+                    purchaseOrderRepository
+                            .existsBySkuAndStatus(sku, "PENDING_APPROVAL");
 
-        response.setForecast(forecastResponse.getForecast());
-        response.setConfidence(forecastResponse.getConfidence());
-        response.setDecision(decision);
+            boolean alreadyApproved =
+                    purchaseOrderRepository
+                            .existsBySkuAndStatus(sku, "APPROVED");
 
-        return response;
+            // Case 1: Requires human approval
+            if ("REQUIRE_APPROVAL".equalsIgnoreCase(decision.getAction())
+                    && !alreadyPending) {
+
+                PurchaseOrder po = PurchaseOrder.builder()
+                        .sku(sku)
+                        .quantity(decision.getQuantity())
+                        .status("PENDING_APPROVAL")
+                        .confidence(forecastResponse.getConfidence())
+                        .build();
+
+                purchaseOrderRepository.save(po);
+            }
+
+            // Case 2: Auto-approved reorder
+            if ("AUTO_REORDER".equalsIgnoreCase(decision.getAction())
+                    && !alreadyApproved) {
+
+                PurchaseOrder po = PurchaseOrder.builder()
+                        .sku(sku)
+                        .quantity(decision.getQuantity())
+                        .status("APPROVED")
+                        .confidence(forecastResponse.getConfidence())
+                        .build();
+
+                purchaseOrderRepository.save(po);
+            }
+        }
+
+        return inventoryAgentMapper.toForecastAndDecisionResponse(
+                forecastResponse.getForecast(),
+                forecastResponse.getConfidence(),
+                decision
+        );
     }
 }
