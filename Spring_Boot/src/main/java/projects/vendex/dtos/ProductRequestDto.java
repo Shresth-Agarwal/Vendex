@@ -8,4 +8,6 @@ public class ProductRequestDto {
     private String productName;
     private double unitCost;
     private boolean active;
+
+    private int initialStock;
 }
