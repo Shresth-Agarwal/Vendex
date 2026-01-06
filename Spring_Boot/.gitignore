@@ -39,4 +39,4 @@ nbdist/
 # Documentation (optional, only if you don't want to track this file)
 HELP.md
 application.properties
-Spring_Boot/src/main/resources/application.properties
+application-dev.properties
