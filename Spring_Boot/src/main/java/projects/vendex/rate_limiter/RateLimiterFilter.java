@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -13,6 +14,7 @@ import projects.vendex.exceptions.ApiErrorResponse;
 
 import java.io.IOException;
 
+@Profile("!dev")
 @Slf4j
 @Component
 public class RateLimiterFilter extends OncePerRequestFilter {
