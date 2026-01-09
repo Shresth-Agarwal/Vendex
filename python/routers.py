@@ -39,22 +39,7 @@ async def process_intent(payload: ChatRequest):
         # This now returns a DICTIONARY
         ai_response = vendex_intelligent_agent(payload.user_input, current_stock)
 
-        # Use .get() to safely access keys
-        action = ai_response.get("action", "CLARIFY")
-
-        if action == "CLARIFY":
-            return {
-                "status": "NEED_INFO",
-                "message": ai_response.get("clarifying_question") or ai_response.get("message")
-            }
-
-        return {
-            "status": "SUCCESS",
-            "intent": ai_response.get("intent_category"),
-            "message": ai_response.get("message"),
-            "bundle": ai_response.get("bundle", []),
-            "confidence": ai_response.get("confidence_score", 0)
-        }
+        return ai_response
 
     except Exception as e:
         print(f"CRITICAL ERROR IN ROUTER: {str(e)}")
