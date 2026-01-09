@@ -20,3 +20,6 @@ class ForecastAndDecideRequest(SalesHistory):
     
 class ChatRequest(BaseModel):
     user_input: str
+
+class StaffAvailability(BaseModel):
+    input_data: dict[dict[str,any]]
