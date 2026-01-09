@@ -1,6 +1,7 @@
 package projects.vendex.providers;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import projects.vendex.dtos.RosterDecisionDto;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-//@Primary
+@Primary
 @RequiredArgsConstructor
 public class MlRosterDecisionProvider implements RosterDecisionProvider {
 
@@ -25,7 +26,7 @@ public class MlRosterDecisionProvider implements RosterDecisionProvider {
         try {
             return mlWebClient
                     .post()
-                    .uri("/roster/decide")
+                    .uri("/api/assign-staff")
                     .bodyValue(input)
                     .retrieve()
                     .bodyToMono(RosterDecisionDto.class)
