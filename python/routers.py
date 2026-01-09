@@ -31,22 +31,10 @@ def forecast_and_decide(payload: ForecastAndDecideRequest):
     decision = inventory_agent_decision(f, c, payload.current_stock, payload.unit_cost)
     return {"forecast": f, "confidence": c, "decision": decision}
 
-# MOCK DATABASE as a JSON String
-MOCK_STOCK_JSON = """
-[
-  {"sku": "MILK_1L", "onHand": 20, "price": 2.5},
-  {"sku": "PASTA_500G", "onHand": 10, "price": 1.5},
-  {"sku": "TOMATO_SAUCE_JAR", "onHand": 5, "price": 3.0},
-  {"sku": "GARLIC_BULB", "onHand": 0, "price": 0.5},
-  {"sku": "IBUPROFEN_200MG", "onHand": 50, "price": 5.0},
-  {"sku": "BAND_AIDS_20PK", "onHand": 15, "price": 4.0}
-]
-"""
-
 @router.post("/process-intent", tags=["Customer Agent"])
 async def process_intent(payload: ChatRequest):
     try:
-        current_stock = json.loads(MOCK_STOCK_JSON) 
+        current_stock = payload.stock_list 
         
         # This now returns a DICTIONARY
         ai_response = vendex_intelligent_agent(payload.user_input, current_stock)
@@ -76,7 +64,6 @@ async def process_intent(payload: ChatRequest):
 async def assign_staff(payload: StaffAvailability):
     try:
         data = payload.model_dump()
-        # We pass ONLY the 'input_data' part to the agent
         assignment_plan = assign_staff_to_shifts(data)
         return assignment_plan
     except Exception as e:
