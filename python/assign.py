@@ -10,6 +10,83 @@ client = AzureOpenAI(
     api_version="2024-12-01-preview"
 )
 
+input_data={
+  "date": "2026-01-08",
+  "shifts": [
+    {
+      "shiftId": 1,
+      "startTime": "09:00",
+      "endTime": "13:00",
+      "requiredSkill": "BILLING"
+    },
+    {
+      "shiftId": 2,
+      "startTime": "13:00",
+      "endTime": "18:00",
+      "requiredSkill": "BILLING"
+    },
+    {
+      "shiftId": 3,
+      "startTime": "10:00",
+      "endTime": "16:00",
+      "requiredSkill": "ORDER_PICKING"
+    },
+    {
+      "shiftId": 4,
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "requiredSkill": "INVENTORY_HANDLING"
+    }
+  ],
+  "staff": [
+    {
+      "staffId": 1,
+      "skills": ["BILLING", "CUSTOMER_SUPPORT"],
+      "hourlyRate": 150,
+      "hoursWorkedThisWeek": 24,
+      "availability": [
+        { "day": "THURSDAY", "start": "09:00", "end": "17:00" }
+      ]
+    },
+    {
+      "staffId": 2,
+      "skills": ["BILLING"],
+      "hourlyRate": 145,
+      "hoursWorkedThisWeek": 38,
+      "availability": [
+        { "day": "THURSDAY", "start": "12:00", "end": "20:00" }
+      ]
+    },
+    {
+      "staffId": 3,
+      "skills": ["ORDER_PICKING", "INVENTORY_HANDLING"],
+      "hourlyRate": 160,
+      "hoursWorkedThisWeek": 16,
+      "availability": [
+        { "day": "THURSDAY", "start": "08:00", "end": "16:00" }
+      ]
+    },
+    {
+      "staffId": 4,
+      "skills": ["ORDER_PICKING"],
+      "hourlyRate": 155,
+      "hoursWorkedThisWeek": 20,
+      "availability": [
+        { "day": "THURSDAY", "start": "14:00", "end": "22:00" }
+      ]
+    },
+    {
+      "staffId": 5,
+      "skills": ["INVENTORY_HANDLING", "SUPERVISION"],
+      "hourlyRate": 200,
+      "hoursWorkedThisWeek": 30,
+      "availability": [
+        { "day": "THURSDAY", "start": "09:00", "end": "18:00" }
+      ]
+    }
+  ]
+}
+
 def assign_staff_to_shifts(input_data):
     """
     Receives shifts and staff from the backend and returns the assignment plan.
