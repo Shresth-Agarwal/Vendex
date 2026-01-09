@@ -1,29 +1,12 @@
 # python/FastAPI/router.py
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from typing import List
-
+from .pydantic_classes.basemodels import SalesHistory, ChatRequest, DecisionPayload, ForecastAndDecideRequest
+from .intent import vendex_intelligent_agent
+import json
 from .demand import get_forecast
 from .decision import inventory_agent_decision
 
 router = APIRouter(prefix="/api", tags=["Inventory"])
-
-class SalesHistory(BaseModel):
-    sales_history: List[float]
-
-class ForecastResponse(BaseModel):
-    forecast: int
-    confidence: float
-
-class DecisionPayload(BaseModel):
-    forecast: int
-    confidence: float
-    current_stock: int
-    unit_cost: float
-
-class ForecastAndDecideRequest(SalesHistory):
-    current_stock: int
-    unit_cost: float
 
 @router.post("/forecast")
 def forecast(payload: SalesHistory):
@@ -47,3 +30,44 @@ def forecast_and_decide(payload: ForecastAndDecideRequest):
         raise HTTPException(status_code=400, detail=str(exc))
     decision = inventory_agent_decision(f, c, payload.current_stock, payload.unit_cost)
     return {"forecast": f, "confidence": c, "decision": decision}
+
+# MOCK DATABASE as a JSON String
+MOCK_STOCK_JSON = """
+[
+  {"sku": "MILK_1L", "onHand": 20, "price": 2.5},
+  {"sku": "PASTA_500G", "onHand": 10, "price": 1.5},
+  {"sku": "TOMATO_SAUCE_JAR", "onHand": 5, "price": 3.0},
+  {"sku": "GARLIC_BULB", "onHand": 0, "price": 0.5},
+  {"sku": "IBUPROFEN_200MG", "onHand": 50, "price": 5.0},
+  {"sku": "BAND_AIDS_20PK", "onHand": 15, "price": 4.0}
+]
+"""
+
+@router.post("/process-intent", tags=["Customer Agent"])
+async def process_intent(payload: ChatRequest):
+    try:
+        current_stock = json.loads(MOCK_STOCK_JSON) 
+        
+        # This now returns a DICTIONARY
+        ai_response = vendex_intelligent_agent(payload.user_input, current_stock)
+
+        # Use .get() to safely access keys
+        action = ai_response.get("action", "CLARIFY")
+
+        if action == "CLARIFY":
+            return {
+                "status": "NEED_INFO",
+                "message": ai_response.get("clarifying_question") or ai_response.get("message")
+            }
+
+        return {
+            "status": "SUCCESS",
+            "intent": ai_response.get("intent_category"),
+            "message": ai_response.get("message"),
+            "bundle": ai_response.get("bundle", []),
+            "confidence": ai_response.get("confidence_score", 0)
+        }
+
+    except Exception as e:
+        print(f"CRITICAL ERROR IN ROUTER: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Agent Error: {str(e)}")
