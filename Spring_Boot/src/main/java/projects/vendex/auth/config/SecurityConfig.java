@@ -3,6 +3,7 @@ package projects.vendex.auth.config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,6 +25,7 @@ import projects.vendex.rate_limiter.RateLimiterFilter;
 @EnableMethodSecurity
 @EnableWebSecurity
 @Configuration
+@Profile("!dev")
 public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -51,7 +53,8 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/docs",
-                                "/agent/**"
+                                "/agent/**",
+                                "/demo/**"
                         )
                         .permitAll()
                         .anyRequest()

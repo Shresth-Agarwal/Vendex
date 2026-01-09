@@ -1,11 +1,13 @@
 package projects.vendex.auth.security;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import projects.vendex.repositories.UserRepository;
 
+@Profile("!dev")
 @Service
 public class MyUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
