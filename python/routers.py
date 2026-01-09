@@ -1,10 +1,10 @@
-# python/FastAPI/router.py
 from fastapi import APIRouter, HTTPException
-from .pydantic_classes.basemodels import SalesHistory, ChatRequest, DecisionPayload, ForecastAndDecideRequest
+from .pydantic_classes.basemodels import SalesHistory, ChatRequest, DecisionPayload, ForecastAndDecideRequest, StaffAvailability
 from .intent import vendex_intelligent_agent
 import json
 from .demand import get_forecast
 from .decision import inventory_agent_decision
+from .assign import assign_staff_to_shifts
 
 router = APIRouter(prefix="/api", tags=["Inventory"])
 
@@ -71,3 +71,13 @@ async def process_intent(payload: ChatRequest):
     except Exception as e:
         print(f"CRITICAL ERROR IN ROUTER: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Agent Error: {str(e)}")
+    
+@router.post("/assign-staff", tags=["Staffing Agent"])
+async def assign_staff(payload: StaffAvailability):
+    try:
+        data = payload.model_dump()
+        # We pass ONLY the 'input_data' part to the agent
+        assignment_plan = assign_staff_to_shifts(data)
+        return assignment_plan
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
