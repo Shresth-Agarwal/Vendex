@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Any, Optional
 
 class SalesHistory(BaseModel):
     sales_history: List[float]
@@ -20,6 +20,9 @@ class ForecastAndDecideRequest(SalesHistory):
     
 class ChatRequest(BaseModel):
     user_input: str
+    stock_list: List[Dict[str, Any]]
 
 class StaffAvailability(BaseModel):
-    input_data: dict[dict[str,any]]
+    date: str
+    shifts: List[Dict[str, Any]]
+    staff: List[Dict[str, Any]]
