@@ -51,7 +51,6 @@ public class CustomerIntentService {
                     .block();
 
         } catch (Exception ex) {
-            // 3️⃣ Fallback (as per your choice C)
             log.warn(ex.getMessage());
             return fallbackResponse();
         }

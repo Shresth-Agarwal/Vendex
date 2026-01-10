@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import projects.vendex.util.InventoryAgentMapper;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -118,5 +119,16 @@ public class InventoryAgentService {
                 forecastResponse.getConfidence(),
                 decision
         );
+    }
+
+    public List<ForecastAndDecisionResponseDto> bulkForecastAndDecide() {
+        List<Product> products = productRepository.findAll();
+        List<ForecastAndDecisionResponseDto> bulkForecast = new ArrayList<ForecastAndDecisionResponseDto>();
+
+        for (Product product : products) {
+            bulkForecast.add(forecastAndDecide(product.getSku()));
+        }
+
+        return bulkForecast;
     }
 }

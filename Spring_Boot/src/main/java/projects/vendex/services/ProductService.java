@@ -26,6 +26,7 @@ public class ProductService {
                 .sku(dto.getSku())
                 .productName(dto.getProductName())
                 .unitCost(dto.getUnitCost())
+                .category(dto.getCategory())
                 .active(dto.isActive())
                 .build();
 
@@ -48,6 +49,7 @@ public class ProductService {
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
         product.setProductName(dto.getProductName());
+        product.setCategory(dto.getCategory());
         product.setUnitCost(dto.getUnitCost());
         product.setActive(dto.isActive());
 
