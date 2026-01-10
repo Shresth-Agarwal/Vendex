@@ -7,6 +7,8 @@ import projects.vendex.dtos.ForecastAndDecisionResponseDto;
 import projects.vendex.dtos.SkuRequestDto;
 import projects.vendex.services.InventoryAgentService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/agent/inventory")
 @RequiredArgsConstructor
@@ -14,12 +16,17 @@ public class InventoryAgentController {
 
     private final InventoryAgentService inventoryAgentService;
 
-    @PostMapping("/forecast-and-decide")
+    @PostMapping("/forecast")
     public ResponseEntity<ForecastAndDecisionResponseDto> forecastAndDecide(
             @RequestBody SkuRequestDto request
     ) {
         return ResponseEntity.ok(
                 inventoryAgentService.forecastAndDecide(request.getSku())
         );
+    }
+
+    @GetMapping("/forecast/all")
+    public ResponseEntity<List<ForecastAndDecisionResponseDto>> bulkForecastAndDecide() {
+        return ResponseEntity.ok(inventoryAgentService.bulkForecastAndDecide());
     }
 }
