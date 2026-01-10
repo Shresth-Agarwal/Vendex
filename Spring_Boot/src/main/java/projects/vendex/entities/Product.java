@@ -22,6 +22,9 @@ public class Product {
     @Column(name = "product_name", nullable = false)
     private String productName;
 
+    @Column(name = "category", nullable = false)
+    private String category;
+
     @Column(name = "unit_cost", nullable = false)
     private double unitCost;
 

@@ -25,7 +25,7 @@ public class PurchaseOrder {
     private int quantity;
 
     @Column(name = "status", nullable = false)
-    private String status; // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
+    private String status;
 
     @Column(name = "confidence")
     private Double confidence;

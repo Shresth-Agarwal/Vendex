@@ -2,17 +2,15 @@ package projects.vendex.entities;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
 @Table(name = "shifts")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,8 +27,7 @@ public class Shift {
 
     private String requiredSkill;
 
-    private Long assignedStaffId; // nullable
+    private Long assignedStaffId;
 
     private String status;
-    // OPEN, OFFERED, ASSIGNED, COMPLETED
 }
