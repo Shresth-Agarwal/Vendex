@@ -47,7 +47,7 @@ public class CustomerIntentService {
                     .bodyValue(request)
                     .retrieve()
                     .bodyToMono(CustomerIntentResponseDto.class)
-                    .timeout(Duration.ofSeconds(5))
+                    .timeout(Duration.ofSeconds(15))
                     .block();
 
         } catch (Exception ex) {
