@@ -6,6 +6,7 @@ import projects.vendex.dtos.CreateShiftRequestDto;
 import projects.vendex.entities.Shift;
 import projects.vendex.services.ShiftService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -36,5 +37,11 @@ public class ShiftController {
             @PathVariable Long staffId
     ) {
         return shiftService.manuallyAssignStaff(shiftId, staffId);
+    }
+
+    @PostMapping("/generate-default")
+    public List<Shift> generateDefaultShifts( @RequestParam(required = false) LocalDate date) {
+        LocalDate targetDate = (date != null) ? date : LocalDate.now();
+        return shiftService.generateDefaultShifts(targetDate);
     }
 }

@@ -9,4 +9,5 @@ import java.util.List;
 public interface ShiftRepository extends JpaRepository<Shift, Long> {
     List<Shift> findByStatus(String status);
     List<Shift> findByStatusAndShiftDate(String status, LocalDate shiftDate);
+    boolean existsByShiftDate(LocalDate shiftDate);
 }
