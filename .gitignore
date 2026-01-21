@@ -11,5 +11,5 @@ Include/
 Lib/
 build/
 pyvenv.cfg
-node_modules/
+frontend/node_modules/
 .env
