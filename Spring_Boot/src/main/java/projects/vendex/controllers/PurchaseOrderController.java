@@ -1,44 +1,56 @@
 package projects.vendex.controllers;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import projects.vendex.entities.PurchaseOrder;
-import projects.vendex.entities.Stock;
-import projects.vendex.exceptions.NotFoundException;
-import projects.vendex.repositories.PurchaseOrderRepository;
-import projects.vendex.repositories.StockRepository;
+import projects.vendex.dtos.PurchaseOrderDto;
+import projects.vendex.mappers.PurchaseOrderMapper;
+import projects.vendex.services.PurchaseOrderService;
 
 import java.util.List;
-
 @RestController
-@RequestMapping("demo/purchase-orders")
+@RequestMapping("demo/manager/purchase-orders")
+// @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class PurchaseOrderController {
 
-    private final PurchaseOrderRepository poRepository;
-    private final StockRepository stockRepository;
+    private final PurchaseOrderService service;
+    private final PurchaseOrderMapper mapper;
 
-    @GetMapping
-    public ResponseEntity<List<PurchaseOrder>> getAll() {
-        return ResponseEntity.ok(poRepository.findAll());
+    // Get PO by id
+    @GetMapping("/{id}")
+    public PurchaseOrderDto get(@PathVariable Long id) {
+        return mapper.toDto(service.getById(id));
     }
 
-    @PutMapping("/{id}/status")
-    public ResponseEntity<PurchaseOrder> updateStatus(
+    @GetMapping
+    public List<PurchaseOrderDto> getAllPurchaseOrders() {
+        return service.getAllPurchaseOrders();
+    }
+
+    // Approve PO
+    @PutMapping("/{id}/approve")
+    public PurchaseOrderDto approve(@PathVariable Long id) {
+        return mapper.toDto(service.approve(id));
+    }
+
+    // Finalize manufacturer
+    @PutMapping("/{id}/finalize/{manufacturerId}")
+    public PurchaseOrderDto finalizeManufacturer(
             @PathVariable Long id,
-            @RequestParam String status
+            @PathVariable Long manufacturerId
     ) {
-        PurchaseOrder po = poRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("PO not found"));
+        return mapper.toDto(service.finalizeManufacturer(id, manufacturerId));
+    }
 
-        if (status.equals("APPROVED")) {
-            Stock stock = stockRepository.findById(po.getSku()).orElseThrow(() -> new NotFoundException("Stock unavailable for this product"));
-            stock.setOnHand(stock.getOnHand() + po.getQuantity());
-            stockRepository.save(stock);
-        }
+    // Mark sent to manufacturer
+    @PutMapping("/{id}/send")
+    public PurchaseOrderDto markSent(@PathVariable Long id) {
+        return mapper.toDto(service.markSent(id));
+    }
 
-        po.setStatus(status);
-        return ResponseEntity.ok(poRepository.save(po));
+    // Mark received (stock update happens in service)
+    @PutMapping("/{id}/received")
+    public PurchaseOrderDto markReceived(@PathVariable Long id) {
+        return mapper.toDto(service.markReceived(id));
     }
 }
