@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException
-from .pydantic_classes.basemodels import SalesHistory, ChatRequest, DecisionPayload, ForecastAndDecideRequest, StaffAvailability
+from .pydantic_classes.basemodels import SalesHistory, ChatRequest, DecisionPayload, ForecastAndDecideRequest, StaffAvailability, ReceiptRequest
 from .intent import vendex_intelligent_agent
 import json
 from .demand import get_forecast
 from .decision import inventory_agent_decision
 from .assign import assign_staff_to_shifts
+from .receipt import create_receipt_pdf
+from fastapi.responses import FileResponse
 
 router = APIRouter(prefix="/api", tags=["Inventory"])
 
@@ -52,4 +54,29 @@ async def assign_staff(payload: StaffAvailability):
         assignment_plan = assign_staff_to_shifts(data)
         return assignment_plan
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate-receipt", tags=["Receipt Generator"])
+async def generate_receipt(payload: ReceiptRequest):
+    try:
+        # 1. Convert Pydantic model to Dictionary
+        data = payload.model_dump()
+        
+        # 2. Create a unique filename
+        po_id = data['purchaseOrder']['purchaseOrderId']
+        filename = f"receipts/receipt_{po_id}.pdf"
+        
+        # 3. Generate the PDF (using the code I gave you earlier)
+        # Make sure the create_receipt_pdf function is accessible
+        create_receipt_pdf(data, filename)
+        
+        # 4. Return the file for download
+        return FileResponse(
+            path=filename, 
+            filename=filename, 
+            media_type='application/pdf'
+        )
+
+    except Exception as e:
+        print(f"Error generating receipt: {e}")
         raise HTTPException(status_code=500, detail=str(e))

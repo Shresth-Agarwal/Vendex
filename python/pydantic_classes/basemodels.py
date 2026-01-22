@@ -26,3 +26,30 @@ class StaffAvailability(BaseModel):
     date: str
     shifts: List[Dict[str, Any]]
     staff: List[Dict[str, Any]]
+
+class POMetadata(BaseModel):
+    purchaseOrderId: int
+    createdAt: str
+    approvedAt: str
+
+class ManufacturerInfo(BaseModel):
+    name: str
+    emailId: str
+    paymentMode: str
+    advanceRequired: bool
+
+class ItemInfo(BaseModel):
+    sku: str
+    quantity: int
+    unitCost: float
+
+class ReceiptTotals(BaseModel):
+    subtotal: float
+    tax: float
+    grandTotal: float
+
+class ReceiptRequest(BaseModel):
+    purchaseOrder: POMetadata
+    manufacturer: ManufacturerInfo
+    items: List[ItemInfo]
+    totals: ReceiptTotals
