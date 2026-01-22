@@ -53,3 +53,31 @@ class ReceiptRequest(BaseModel):
     manufacturer: ManufacturerInfo
     items: List[ItemInfo]
     totals: ReceiptTotals
+
+class  ManufacturerProduct(BaseModel):
+    sku: str
+    costPrice: float
+    minimumOrderQuantity: int
+
+class ManufacturerDetail(BaseModel):
+    manufacturerId: int
+    distanceKm: float
+    averageRating: float
+    advanceRequired: bool
+    preferredPaymentMode: str
+    products: List[ManufacturerProduct]
+
+class SourcingItem(BaseModel):
+    sku: str
+    quantity: int
+
+class SourcingContext(BaseModel):
+    purchaseOrderId: int
+    preferredPaymentMode: str
+    confidence: float
+    createdAt: str
+
+class SourcingRequest(BaseModel):
+    context: SourcingContext
+    items: List[SourcingItem]
+    manufacturers: List[ManufacturerDetail]
