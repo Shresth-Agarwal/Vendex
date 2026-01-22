@@ -44,7 +44,6 @@ OUTPUT FORMAT (Strict JSON):
 """
 
 def vendex_intelligent_agent(user_query, current_stock_list):
-    # Use .replace instead of .format
     formatted_system_prompt = SYSTEM_PROMPT.replace("[[STOCK_JSON]]", json.dumps(current_stock_list))
 
     try:
