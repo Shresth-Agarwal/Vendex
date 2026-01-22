@@ -5,51 +5,55 @@ def suggest_best_manufacturer(input_data):
     items_needed = input_data['items']
     manufacturers = input_data['manufacturers']
     buyer_preferred_payment = input_data['context']['preferredPaymentMode']
-    
-    # 1. Prepare Data for Scoring
-    processed_list = []
-    
+
+    valid_manufacturers = []
+
+    # 1. FEASIBILITY + AGGREGATION
     for m in manufacturers:
+        product_map = {p["sku"]: p for p in m["products"]}
+        total_cost = 0
+        valid = True
+
         for item in items_needed:
-            # Find the matching product in manufacturer's list
-            prod = next((p for p in m['products'] if p['sku'] == item['sku']), None)
-            
-            if prod:
-                # CONSTRAINT CHECK: Can they actually fulfill this order?
-                if item['quantity'] < prod['minimumOrderQuantity']:
-                    continue # Skip this manufacturer for this item
-                
-                total_cost = prod['costPrice'] * item['quantity']
-                
-                processed_list.append({
-                    "manufacturerId": m['manufacturerId'],
-                    "total_cost": total_cost,
-                    "distance": m['distanceKm'],
-                    "rating": m['averageRating'],
-                    "advance": 1 if m['advanceRequired'] else 0,
-                    "payment": m['preferredPaymentMode']
-                })
+            if item["sku"] not in product_map:
+                valid = False
+                break
 
-    if not processed_list:
-        return {"error": "No manufacturer meets the Minimum Order Quantity requirements."}
+            prod = product_map[item["sku"]]
+            if item["quantity"] < prod["minimumOrderQuantity"]:
+                valid = False
+                break
 
-    df = pd.DataFrame(processed_list)
+            total_cost += prod["costPrice"] * item["quantity"]
 
-    # 2. NORMALIZATION (Scaling values between 0 and 1)
-    # Higher score is ALWAYS better
+        if valid:
+            valid_manufacturers.append({
+                "manufacturerId": m["manufacturerId"],
+                "total_cost": total_cost,
+                "distance": m["distanceKm"],
+                "rating": m["averageRating"],
+                "advance": 1 if m["advanceRequired"] else 0,
+                "payment": m["preferredPaymentMode"]
+            })
+
+    if not valid_manufacturers:
+        return {"error": "No manufacturer can fulfill all items with required MOQs."}
+
+    df = pd.DataFrame(valid_manufacturers)
+
+    # 2. NORMALIZATION (Higher is better)
     df['cost_score'] = 1 - (df['total_cost'] - df['total_cost'].min()) / (df['total_cost'].max() - df['total_cost'].min() + 1)
     df['dist_score'] = 1 - (df['distance'] - df['distance'].min()) / (df['distance'].max() - df['distance'].min() + 1)
     df['rating_score'] = df['rating'] / 5.0
     df['advance_penalty'] = df['advance'].apply(lambda x: 0.8 if x == 1 else 1.0)
     df['payment_score'] = df['payment'].apply(lambda x: 1.0 if x == buyer_preferred_payment else 0.9)
-    
-    # 3. WEIGHTED SCORING (Tweak these based on store preference)
-    # Price is usually the most important
+
+    # 3. WEIGHTS
     weights = {
-        "cost": 0.48,
-        "rating": 0.24,
-        "distance": 0.14,
-        "advance": 0.09,
+        "cost": 0.45,
+        "rating": 0.25,
+        "distance": 0.15,
+        "advance": 0.10,
         "payment": 0.05
     }
 
@@ -61,53 +65,16 @@ def suggest_best_manufacturer(input_data):
         (df['payment_score'] * weights['payment'])
     )
 
-    # 4. GET THE WINNER
+    # 4. WINNER
     winner = df.loc[df['final_score'].idxmax()]
-    
-    return winner.to_dict()
 
-'''data = {
-  "context": {
-    "purchaseOrderId": 1243,
-    "preferredPaymentMode": "UPI",
-    "confidence": 0.92,
-    "createdAt": "2026-01-22T10:30:00"
-  },
-  "items": [
-    {
-      "sku": "RICE_25KG",
-      "quantity": 40
+    return {
+        "recommendedManufacturerId": int(winner["manufacturerId"]),
+        "score": round(float(winner["final_score"]), 4),
+        "totalCost": int(winner["total_cost"]),
+        "reasoning": (
+            f"Selected based on lowest effective cost (₹{int(winner['total_cost'])}), "
+            f"rating {winner['rating']}, distance {winner['distance']} km, "
+            f"and compatibility with preferred payment mode."
+        )
     }
-  ],
-  "manufacturers": [
-    {
-      "manufacturerId": 12,
-      "distanceKm": 18.5,
-      "averageRating": 4.3,
-      "advanceRequired": True,
-      "preferredPaymentMode": "UPI",
-      "products": [
-        {
-          "sku": "RICE_25KG",
-          "costPrice": 1120,
-          "minimumOrderQuantity": 10
-        }
-      ]
-    },
-    {
-      "manufacturerId": 19,
-      "distanceKm": 6.2,
-      "averageRating": 3.8,
-      "advanceRequired": False,
-      "preferredPaymentMode": "CREDIT",
-      "products": [
-        {
-          "sku": "RICE_25KG",
-          "costPrice": 1180,
-          "minimumOrderQuantity": 5
-        }
-      ]
-    }
-  ]
-}
-print(suggest_best_manufacturer(data))'''

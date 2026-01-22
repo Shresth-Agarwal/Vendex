@@ -90,13 +90,8 @@ async def recommend_manufacturer(payload: SourcingRequest):
     # 2. Run the scoring logic
     winner = suggest_best_manufacturer(data)
     
-    if not winner:
+    if not winner or "error" in winner:
         raise HTTPException(status_code=404, detail="No suitable manufacturer found meeting Minimum Order Quantities.")
 
-    # 3. Return a clean recommendation
-    return {
-        "recommendedManufacturerId": winner['manufacturerId'],
-        "score": round(winner['final_score'], 2),
-        "totalCost": winner['total_cost'],
-        "reasoning": f"This manufacturer offered the best balance of cost (Rs.{winner['total_cost']}) and a reliability rating of {winner['rating']}."
-    }
+    # 3. Return the recommendation (recommender already formats it)
+    return winner
