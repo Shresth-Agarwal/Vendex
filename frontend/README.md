@@ -1,29 +1,59 @@
-# Vendex E-commerce Frontend
+# Vendex Frontend - Next.js Application
 
-A modern React.js frontend for the Vendex e-commerce platform with customer shopping interface and vendor dashboard.
+A modern, production-ready Next.js frontend for the Vendex B2B platform that connects consumers, store owners, and manufacturers.
 
 ## Features
 
-### Customer Shop
-- Browse products with search functionality
-- Add items to shopping cart
-- View and manage cart items
-- Real-time stock availability
-- Checkout functionality
+### 🛒 Consumer Dashboard
+- **Product Search** with real-time availability
+- **Intent Builder** - AI-powered product recommendations based on natural language input
+- Shopping cart and checkout functionality
+- Real-time stock updates
 
-### Vendor Dashboard
-- View all inventory stock
-- Real-time inventory statistics
-- Edit stock quantities
-- Stock status indicators (In Stock, Low Stock, Out of Stock)
-- Product information display
+### 🏪 Store Owner Dashboard
+- **Real-time Inventory Management** with auto-refresh
+- **Demand Forecast** - AI-powered predictions for optimal reorder quantities
+- **Request Supply Flow** - Get manufacturer recommendations and select suppliers
+- **Staff Management** - Create, edit, and manage staff accounts with role assignments
+- **Shift Management** - Assign shifts with date and time
+- **Receipt Generation** - Download and email PDF receipts
+- **Analytics Dashboard** - Power BI integration for sales trends and stock movement
 
-## Setup Instructions
+### 🏭 Manufacturer Dashboard
+- View incoming purchase requests
+- Accept or reject orders
+- Download receipts
+- Encrypted messaging with store owners
+
+### 💬 Communication
+- **Encrypted Chat** - End-to-end encrypted messaging between store owners and manufacturers
+- WhatsApp/Slack-like UI
+- Real-time message polling
+
+### 📊 Analytics & Reports
+- Power BI dashboard embedding
+- Sales trends visualization
+- Stock movement tracking
+- Demand forecast charts
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: Zustand
+- **HTTP Client**: Axios
+- **Icons**: React Icons
+- **Forms**: React Hook Form + Zod
+- **Encryption**: CryptoJS
+
+## Getting Started
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- npm or yarn
+
+- Node.js 18+ and npm/yarn
 - Backend Spring Boot server running on `http://localhost:8080`
+- Python FastAPI server running on `http://localhost:8000` (for AI/ML features)
 
 ### Installation
 
@@ -37,86 +67,171 @@ cd frontend
 npm install
 ```
 
-3. Start the development server:
+3. Create a `.env.local` file in the frontend directory:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8080
+NEXT_PUBLIC_PYTHON_API_URL=http://localhost:8000
+NEXT_PUBLIC_POWER_BI_URL=your_power_bi_embed_url_here
+```
+
+4. Start the development server:
 ```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:3000`
+
+### Build for Production
+
+```bash
+npm run build
 npm start
 ```
-
-The application will open in your browser at `http://localhost:3000`
-
-## Configuration
-
-The API base URL is configured in `src/services/api.js`. By default, it points to:
-```
-http://localhost:8080
-```
-
-If your backend runs on a different port or URL, update the `API_BASE_URL` constant in `src/services/api.js`.
 
 ## Project Structure
 
 ```
 frontend/
-├── public/
-│   └── index.html
 ├── src/
-│   ├── components/
-│   │   ├── CustomerShop.js       # Customer shopping interface
-│   │   ├── CustomerShop.css
-│   │   ├── VendorDashboard.js    # Vendor inventory dashboard
-│   │   └── VendorDashboard.css
-│   ├── services/
-│   │   └── api.js                # API service layer
-│   ├── App.js                     # Main app component with routing
-│   ├── App.css
-│   ├── index.js                   # Entry point
-│   └── index.css
+│   ├── app/                    # Next.js App Router pages
+│   │   ├── consumer/          # Consumer dashboard pages
+│   │   ├── store-owner/       # Store owner dashboard pages
+│   │   ├── manufacturer/      # Manufacturer dashboard pages
+│   │   ├── staff/             # Staff dashboard pages
+│   │   ├── login/              # Authentication pages
+│   │   ├── layout.tsx          # Root layout
+│   │   ├── page.tsx            # Home page (redirects based on role)
+│   │   └── globals.css         # Global styles
+│   ├── components/              # Reusable components
+│   │   ├── ProductCard.tsx
+│   │   ├── ManufacturerCard.tsx
+│   │   ├── InventoryTable.tsx
+│   │   ├── ChatWindow.tsx
+│   │   ├── ReceiptModal.tsx
+│   │   ├── SearchAutocomplete.tsx
+│   │   └── Layout.tsx
+│   ├── lib/                    # Utilities and API
+│   │   └── api.ts              # API service layer
+│   ├── store/                  # State management
+│   │   └── authStore.ts        # Authentication store
+│   └── utils/                  # Helper functions
+│       ├── encryption.ts       # Message encryption/decryption
+│       └── imageUtils.ts       # Image URL utilities
+├── public/                     # Static assets
 ├── package.json
-└── README.md
+├── tsconfig.json
+├── tailwind.config.ts
+└── next.config.js
 ```
 
-## API Endpoints Used
+## API Integration
 
-### Products
-- `GET /demo/products` - Get all products
-- `GET /demo/products/{sku}` - Get product by SKU
+The frontend connects to two backend services:
 
-### Stock
-- `GET /demo/stock` - Get all stock items
-- `GET /demo/stock/{sku}` - Get stock by SKU
-- `PUT /demo/stock/{sku}` - Update stock quantity
+### Spring Boot Backend (Port 8080)
+- Authentication (`/auth/login`, `/auth/register`)
+- Products (`/demo/products`)
+- Inventory (`/demo/stock`)
+- Orders (`/demo/sales`)
+- Purchase Orders (`/demo/manager/purchase-orders`)
+- Manufacturers (`/demo/manufacturers`)
+- Staff Management (`/demo/staff`, `/demo/shifts`)
+- Chat (`/demo/chat`)
 
-### Sales
-- `POST /demo/sales` - Create a sale/order
+### Python FastAPI Backend (Port 8000)
+- Intent Processing (`/api/process-intent`)
+- Demand Forecast (`/api/forecast`)
+- Inventory Decisions (`/api/decision`)
+- Manufacturer Recommendation (`/api/sourcing/recommend`)
+- Receipt Generation (`/api/generate-receipt`)
+- Staff Assignment (`/api/assign-staff`)
 
-## Usage
+## Authentication & Authorization
 
-### Customer Shopping
-1. Navigate to the Customer Shop page
-2. Browse products or use the search bar
-3. Click "Add to Cart" on desired products
-4. Click the Cart button to view your cart
-5. Adjust quantities or remove items
-6. Click "Checkout" to place your order
+- JWT-based authentication
+- Role-based routing (CONSUMER, STORE_OWNER, MANUFACTURER, STAFF, ADMIN)
+- Automatic token refresh and logout on expiration
+- Protected routes based on user role
 
-### Vendor Dashboard
-1. Navigate to the Vendor Dashboard page
-2. View inventory statistics at the top
-3. Browse the inventory table
-4. Click the edit icon to update stock quantities
-5. Enter new quantity and click save
-6. Use the refresh button to reload inventory data
+## Smart Features
 
-## Technologies Used
+1. **Autocomplete Search** - Smart product search with suggestions
+2. **Visual Badges** - Status indicators for stock levels, best manufacturers, etc.
+3. **Real-time Updates** - Auto-refresh inventory and messages using polling
+4. **Intent Builder** - AI-powered natural language to product list conversion
+5. **Demand Forecasting** - ML-powered inventory optimization
 
-- React 18.2.0
-- React Router DOM 6.20.0
-- Axios 1.6.2
-- React Icons 4.12.0
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_API_URL` | Spring Boot backend URL | `http://localhost:8080` |
+| `NEXT_PUBLIC_PYTHON_API_URL` | Python FastAPI backend URL | `http://localhost:8000` |
+| `NEXT_PUBLIC_POWER_BI_URL` | Power BI embed URL | (optional) |
+
+## Development
+
+### Running in Development Mode
+
+```bash
+npm run dev
+```
+
+### Building for Production
+
+```bash
+npm run build
+npm start
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## Key Components
+
+### ProductCard
+Displays product information with stock status, images, and add-to-cart functionality.
+
+### ManufacturerCard
+Shows manufacturer details with ratings, distance, pricing, and selection capability.
+
+### InventoryTable
+Comprehensive inventory management table with inline editing, forecast data, and status badges.
+
+### ChatWindow
+Encrypted messaging interface with real-time updates and message history.
+
+### ReceiptModal
+PDF receipt generation and email functionality.
 
 ## Notes
 
-- The frontend assumes the backend is running and accessible
-- CORS must be enabled on the backend to allow requests from `http://localhost:3000`
-- Stock updates are reflected immediately after checkout
-- The vendor dashboard shows real-time inventory status
+- The frontend assumes CORS is enabled on both backend servers
+- JWT tokens are stored in cookies and localStorage for persistence
+- Real-time updates use polling (can be upgraded to WebSockets)
+- Encryption keys for chat are derived from user IDs (should be improved in production)
+- Power BI embedding requires proper authentication setup
+
+## Troubleshooting
+
+### Backend Connection Issues
+- Ensure both Spring Boot and Python FastAPI servers are running
+- Check CORS configuration on backend servers
+- Verify API URLs in `.env.local`
+
+### Authentication Issues
+- Clear browser cookies and localStorage
+- Check JWT token expiration
+- Verify backend authentication endpoints
+
+### Build Issues
+- Clear `.next` directory and rebuild
+- Check Node.js version (requires 18+)
+- Verify all dependencies are installed
+
+## License
+
+This project is part of the Vendex platform.
