@@ -1,16 +1,17 @@
 from fastapi import APIRouter, HTTPException
-from .pydantic_classes.basemodels import SalesHistory, ChatRequest, DecisionPayload, ForecastAndDecideRequest, StaffAvailability, ReceiptRequest
+from .pydantic_classes.basemodels import SalesHistory, ChatRequest, DecisionPayload, ForecastAndDecideRequest, StaffAvailability, ReceiptRequest, SourcingRequest
 from .intent import vendex_intelligent_agent
 import json
 from .demand import get_forecast
 from .decision import inventory_agent_decision
 from .assign import assign_staff_to_shifts
 from .receipt import create_receipt_pdf
+from .recommender import suggest_best_manufacturer
 from fastapi.responses import FileResponse
 
-router = APIRouter(prefix="/api", tags=["Inventory"])
+router = APIRouter(prefix="/api")
 
-@router.post("/forecast")
+@router.post("/forecast", tags=["Inventory"])
 def forecast(payload: SalesHistory):
     try:
         f, c = get_forecast(payload.sales_history)
@@ -18,13 +19,13 @@ def forecast(payload: SalesHistory):
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-@router.post("/decision")
+@router.post("/decision", tags=["Inventory"])
 def decision(payload: DecisionPayload):
     return inventory_agent_decision(
         payload.forecast, payload.confidence, payload.current_stock, payload.unit_cost
     )
 
-@router.post("/forecast-and-decide")
+@router.post("/forecast-and-decide", tags=["Inventory"])
 def forecast_and_decide(payload: ForecastAndDecideRequest):
     try:
         f, c = get_forecast(payload.sales_history)
@@ -80,3 +81,22 @@ async def generate_receipt(payload: ReceiptRequest):
     except Exception as e:
         print(f"Error generating receipt: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/sourcing/recommend", tags=["Sourcing Recommender"])
+async def recommend_manufacturer(payload: SourcingRequest):
+    # 1. Convert Pydantic to Dict
+    data = payload.model_dump()
+    
+    # 2. Run the scoring logic
+    winner = suggest_best_manufacturer(data)
+    
+    if not winner:
+        raise HTTPException(status_code=404, detail="No suitable manufacturer found meeting Minimum Order Quantities.")
+
+    # 3. Return a clean recommendation
+    return {
+        "recommendedManufacturerId": winner['manufacturerId'],
+        "score": round(winner['final_score'], 2),
+        "totalCost": winner['total_cost'],
+        "reasoning": f"This manufacturer offered the best balance of cost (Rs.{winner['total_cost']}) and a reliability rating of {winner['rating']}."
+    }
