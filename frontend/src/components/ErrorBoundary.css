@@ -1,0 +1,78 @@
+.error-boundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFFBEA;
+  padding: 2rem;
+}
+
+.error-boundary-content {
+  text-align: center;
+  max-width: 500px;
+  background: white;
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(202, 138, 4, 0.1);
+  border: 2px solid #FDE68A;
+}
+
+.error-icon {
+  font-size: 4rem;
+  color: #EF4444;
+  margin-bottom: 1rem;
+}
+
+.error-boundary-content h1 {
+  color: #CA8A04;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.error-boundary-content p {
+  color: #6B7280;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.retry-button {
+  background: #FACC15;
+  color: #1F2937;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.retry-button:hover {
+  background: #CA8A04;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+}
+
+.error-details {
+  margin-top: 2rem;
+  text-align: left;
+  background: #FEF3C7;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #FDE68A;
+}
+
+.error-details summary {
+  cursor: pointer;
+  color: #CA8A04;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.error-details pre {
+  color: #92400E;
+  font-size: 0.85rem;
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
