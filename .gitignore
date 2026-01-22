@@ -13,3 +13,4 @@ build/
 pyvenv.cfg
 frontend/node_modules/
 .env
+receipts/
