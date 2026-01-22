@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class InventoryAgentService {
@@ -23,8 +22,7 @@ public class InventoryAgentService {
     private final SalesRepository salesRepository;
     private final StockRepository stockRepository;
     private final InventoryAgentMapper inventoryAgentMapper;
-    private final PurchaseOrderRepository purchaseOrderRepository;
-
+    private final PurchaseOrderService purchaseOrderService;
 
     private static final int FORECAST_LOOKBACK_DAYS = 30;
 
@@ -58,12 +56,14 @@ public class InventoryAgentService {
             throw new IllegalStateException("Insufficient sales data for SKU: " + sku);
         }
 
+        // 1. Forecast
         SalesHistoryDto forecastRequest = new SalesHistoryDto();
         forecastRequest.setSalesHistory(salesHistory);
 
         ForecastResponseDto forecastResponse =
                 inventoryMlService.getForecast(forecastRequest);
 
+        // 2. Decision payload
         DecisionPayloadDto decisionPayload =
                 inventoryAgentMapper.toDecisionPayloadDto(
                         forecastResponse.getForecast(),
@@ -75,45 +75,20 @@ public class InventoryAgentService {
         InventoryDecisionDto decision =
                 inventoryMlService.getDecision(decisionPayload);
 
+        // 3. Create PO if needed (delegate to service)
         if (decision.getQuantity() > 0) {
 
-            boolean alreadyPending =
-                    purchaseOrderRepository
-                            .existsBySkuAndStatus(sku, "PENDING_APPROVAL");
+            PurchaseOrderItem item = new PurchaseOrderItem();
+            item.setSku(sku);
+            item.setQuantity(decision.getQuantity());
 
-            boolean alreadyApproved =
-                    purchaseOrderRepository
-                            .existsBySkuAndStatus(sku, "APPROVED");
-
-            // Case 1: Requires human approval
-            if ("REQUIRE_APPROVAL".equalsIgnoreCase(decision.getAction())
-                    && !alreadyPending) {
-
-                PurchaseOrder po = PurchaseOrder.builder()
-                        .sku(sku)
-                        .quantity(decision.getQuantity())
-                        .status("PENDING_APPROVAL")
-                        .confidence(forecastResponse.getConfidence())
-                        .build();
-
-                purchaseOrderRepository.save(po);
-            }
-
-            // Case 2: Auto-approved reorder
-            if ("AUTO_REORDER".equalsIgnoreCase(decision.getAction())
-                    && !alreadyApproved) {
-
-                PurchaseOrder po = PurchaseOrder.builder()
-                        .sku(sku)
-                        .quantity(decision.getQuantity())
-                        .status("APPROVED")
-                        .confidence(forecastResponse.getConfidence())
-                        .build();
-
-                purchaseOrderRepository.save(po);
-            }
+            purchaseOrderService.createFromDecision(
+                    List.of(item),
+                    forecastResponse.getConfidence()
+            );
         }
 
+        // 4. Return combined response
         return inventoryAgentMapper.toForecastAndDecisionResponse(
                 forecastResponse.getForecast(),
                 forecastResponse.getConfidence(),
@@ -122,13 +97,14 @@ public class InventoryAgentService {
     }
 
     public List<ForecastAndDecisionResponseDto> bulkForecastAndDecide() {
+
         List<Product> products = productRepository.findAll();
-        List<ForecastAndDecisionResponseDto> bulkForecast = new ArrayList<ForecastAndDecisionResponseDto>();
+        List<ForecastAndDecisionResponseDto> responses = new ArrayList<>();
 
         for (Product product : products) {
-            bulkForecast.add(forecastAndDecide(product.getSku()));
+            responses.add(forecastAndDecide(product.getSku()));
         }
 
-        return bulkForecast;
+        return responses;
     }
 }
