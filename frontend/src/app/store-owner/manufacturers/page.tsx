@@ -8,6 +8,7 @@ import Link from 'next/link';
 export default function ManufacturersPage() {
   const [manufacturers, setManufacturers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editingManufacturer, setEditingManufacturer] = useState<any>(null);
   const [formData, setFormData] = useState({
@@ -22,11 +23,14 @@ export default function ManufacturersPage() {
   }, []);
 
   const loadManufacturers = async () => {
+    setError(null);
     try {
       const data = await manufacturersApi.getAll();
-      setManufacturers(data);
-    } catch (error) {
+      setManufacturers(data || []);
+    } catch (error: any) {
       console.error('Error loading manufacturers:', error);
+      setError(error?.response?.data?.message || error?.message || 'Failed to load manufacturers. Please try again.');
+      setManufacturers([]);
     } finally {
       setLoading(false);
     }
@@ -69,13 +73,13 @@ export default function ManufacturersPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this manufacturer?')) return;
+    setError(null);
     try {
       await manufacturersApi.delete(id);
       await loadManufacturers();
-      alert('Manufacturer deleted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting manufacturer:', error);
-      alert('Failed to delete manufacturer');
+      setError(error?.response?.data?.message || error?.message || 'Failed to delete manufacturer. Please try again.');
     }
   };
 
@@ -92,6 +96,18 @@ export default function ManufacturersPage() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="mt-2 text-sm text-red-600 hover:text-red-800"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Manufacturer Management</h1>
         <button
@@ -112,6 +128,12 @@ export default function ManufacturersPage() {
         </button>
       </div>
 
+      {manufacturers.length === 0 && !loading && (
+        <div className="card text-center py-8">
+          <p className="text-gray-500">No manufacturers found. Add your first manufacturer to get started.</p>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {manufacturers.map((manufacturer) => (
           <div key={manufacturer.id || manufacturer.manufacturerId} className="card">

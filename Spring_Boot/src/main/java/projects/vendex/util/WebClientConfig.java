@@ -13,4 +13,25 @@ public class WebClientConfig {
                 .baseUrl("http://localhost:8000")
                 .build();
     }
+
+    @Bean
+    public WebClient customerAgentWebClient() {
+        return WebClient.builder()
+                .baseUrl("http://localhost:8000")
+                .build();
+    }
+
+    @Bean
+    public WebClient fastApiWebClient() {
+        return WebClient.builder()
+                .baseUrl("http://localhost:8000")
+                .build();
+    }
+
+    @Bean
+    public WebClient mlWebClient() {
+        return WebClient.builder()
+                .baseUrl("http://localhost:8000")
+                .build();
+    }
 }

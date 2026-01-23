@@ -23,12 +23,36 @@ export default function InventoryPage() {
   const [manualSku, setManualSku] = useState('');
   const [manualForecast, setManualForecast] = useState<any>(null);
   const [loadingManualForecast, setLoadingManualForecast] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Direct FastAPI input states
+  const [directForecastInput, setDirectForecastInput] = useState('');
+  const [directForecastResult, setDirectForecastResult] = useState<any>(null);
+  const [loadingDirectForecast, setLoadingDirectForecast] = useState(false);
+  
+  const [directDecisionInput, setDirectDecisionInput] = useState({
+    forecast: '',
+    confidence: '',
+    currentStock: '',
+    unitCost: '',
+  });
+  const [directDecisionResult, setDirectDecisionResult] = useState<any>(null);
+  const [loadingDirectDecision, setLoadingDirectDecision] = useState(false);
+  
+  const [directForecastDecideInput, setDirectForecastDecideInput] = useState({
+    salesHistory: '',
+    currentStock: '',
+    unitCost: '',
+  });
+  const [directForecastDecideResult, setDirectForecastDecideResult] = useState<any>(null);
+  const [loadingDirectForecastDecide, setLoadingDirectForecastDecide] = useState(false);
 
   useEffect(() => {
     loadInventory();
   }, [isAuthenticated, user]);
 
   const loadInventory = async () => {
+    setError(null);
     try {
       const productsData = await productsApi.getAll();
       
@@ -43,6 +67,7 @@ export default function InventoryPage() {
               unitCost: product.unitCost || 0,
             };
           } catch (error) {
+            console.warn(`Could not load stock for ${product.sku}:`, error);
             return {
               ...product,
               sku: product.sku,
@@ -57,7 +82,7 @@ export default function InventoryPage() {
 
       setInventory(inventoryWithStock);
 
-      // Load forecasts for low stock items
+      // Load forecasts for low stock items (with error handling)
       const lowStockItems = inventoryWithStock.filter((item: any) => item.onHand < 10);
       const forecastMap = new Map<string, any>();
       
@@ -66,13 +91,15 @@ export default function InventoryPage() {
           const forecast = await inventoryAgentApi.forecastAndDecide(item.sku);
           forecastMap.set(item.sku, forecast);
         } catch (error) {
-          console.error(`Error getting forecast for ${item.sku}:`, error);
+          console.warn(`Could not get forecast for ${item.sku}:`, error);
+          // Continue without this forecast
         }
       }
       
       setForecasts(forecastMap);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading inventory:', error);
+      setError(error?.message || 'Failed to load inventory. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -145,18 +172,151 @@ export default function InventoryPage() {
     }
   };
 
+  const handleSelectItem = (sku: string, quantity: number) => {
+    const next = new Map(selectedItems);
+    if (quantity > 0) {
+      next.set(sku, quantity);
+    } else {
+      next.delete(sku);
+    }
+    setSelectedItems(next);
+  };
+
   const handleManualForecast = async () => {
     if (!manualSku.trim()) return;
     
     setLoadingManualForecast(true);
+    setError(null);
     try {
       const forecast = await inventoryAgentApi.forecastAndDecide(manualSku.trim());
       setManualForecast({ sku: manualSku.trim(), forecast });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting manual forecast:', error);
-      alert('Failed to get forecast. Please check the SKU and try again.');
+      setError(error?.response?.data?.message || error?.message || 'Failed to get forecast. Please check the SKU and try again.');
+      setManualForecast(null);
     } finally {
       setLoadingManualForecast(false);
+    }
+  };
+
+  const handleDirectForecast = async () => {
+    if (!directForecastInput.trim()) {
+      setError('Please enter sales history as comma-separated numbers');
+      return;
+    }
+    
+    setLoadingDirectForecast(true);
+    setError(null);
+    try {
+      const salesHistory = directForecastInput.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+      if (salesHistory.length === 0) {
+        throw new Error('Invalid sales history format. Please enter comma-separated numbers.');
+      }
+      
+      const response = await fetch('http://localhost:8000/api/forecast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sales_history: salesHistory }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Forecast request failed');
+      }
+      
+      const result = await response.json();
+      setDirectForecastResult(result);
+    } catch (error: any) {
+      console.error('Error calling direct forecast:', error);
+      setError(error?.message || 'Failed to get forecast. Please check your input.');
+      setDirectForecastResult(null);
+    } finally {
+      setLoadingDirectForecast(false);
+    }
+  };
+
+  const handleDirectDecision = async () => {
+    const forecast = parseFloat(directDecisionInput.forecast);
+    const confidence = parseFloat(directDecisionInput.confidence);
+    const currentStock = parseInt(directDecisionInput.currentStock);
+    const unitCost = parseFloat(directDecisionInput.unitCost);
+    
+    if (isNaN(forecast) || isNaN(confidence) || isNaN(currentStock) || isNaN(unitCost)) {
+      setError('Please fill all fields with valid numbers');
+      return;
+    }
+    
+    setLoadingDirectDecision(true);
+    setError(null);
+    try {
+      const response = await fetch('http://localhost:8000/api/decision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          forecast,
+          confidence,
+          current_stock: currentStock,
+          unit_cost: unitCost,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Decision request failed');
+      }
+      
+      const result = await response.json();
+      setDirectDecisionResult(result);
+    } catch (error: any) {
+      console.error('Error calling direct decision:', error);
+      setError(error?.message || 'Failed to get decision. Please check your input.');
+      setDirectDecisionResult(null);
+    } finally {
+      setLoadingDirectDecision(false);
+    }
+  };
+
+  const handleDirectForecastDecide = async () => {
+    if (!directForecastDecideInput.salesHistory.trim()) {
+      setError('Please enter sales history');
+      return;
+    }
+    
+    const salesHistory = directForecastDecideInput.salesHistory.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+    const currentStock = parseInt(directForecastDecideInput.currentStock);
+    const unitCost = parseFloat(directForecastDecideInput.unitCost);
+    
+    if (salesHistory.length === 0 || isNaN(currentStock) || isNaN(unitCost)) {
+      setError('Please fill all fields with valid numbers');
+      return;
+    }
+    
+    setLoadingDirectForecastDecide(true);
+    setError(null);
+    try {
+      const response = await fetch('http://localhost:8000/api/forecast-and-decide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sales_history: salesHistory,
+          current_stock: currentStock,
+          unit_cost: unitCost,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Forecast and decide request failed');
+      }
+      
+      const result = await response.json();
+      setDirectForecastDecideResult(result);
+    } catch (error: any) {
+      console.error('Error calling direct forecast-and-decide:', error);
+      setError(error?.message || 'Failed to get forecast and decision. Please check your input.');
+      setDirectForecastDecideResult(null);
+    } finally {
+      setLoadingDirectForecastDecide(false);
     }
   };
 
@@ -173,6 +333,18 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="mt-2 text-sm text-red-600 hover:text-red-800"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
         <div className="flex gap-2">
@@ -274,6 +446,141 @@ export default function InventoryPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Direct FastAPI Endpoints */}
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4">Direct FastAPI Endpoints</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Test FastAPI endpoints directly with your own input data.
+        </p>
+        
+        <div className="space-y-6">
+          {/* Forecast Endpoint */}
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold mb-2">1. Forecast Endpoint</h3>
+            <p className="text-sm text-gray-600 mb-2">Enter sales history as comma-separated numbers (e.g., 10, 15, 12, 18, 20)</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={directForecastInput}
+                onChange={(e) => setDirectForecastInput(e.target.value)}
+                placeholder="10, 15, 12, 18, 20"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <button
+                onClick={handleDirectForecast}
+                disabled={loadingDirectForecast || !directForecastInput.trim()}
+                className="btn-primary flex items-center gap-2"
+              >
+                {loadingDirectForecast ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  'Get Forecast'
+                )}
+              </button>
+            </div>
+            {directForecastResult && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                <pre className="text-sm overflow-auto">{JSON.stringify(directForecastResult, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+
+          {/* Decision Endpoint */}
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold mb-2">2. Decision Endpoint</h3>
+            <p className="text-sm text-gray-600 mb-2">Enter forecast, confidence, current stock, and unit cost</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
+              <input
+                type="number"
+                value={directDecisionInput.forecast}
+                onChange={(e) => setDirectDecisionInput({ ...directDecisionInput, forecast: e.target.value })}
+                placeholder="Forecast"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <input
+                type="number"
+                step="0.01"
+                value={directDecisionInput.confidence}
+                onChange={(e) => setDirectDecisionInput({ ...directDecisionInput, confidence: e.target.value })}
+                placeholder="Confidence (0-1)"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <input
+                type="number"
+                value={directDecisionInput.currentStock}
+                onChange={(e) => setDirectDecisionInput({ ...directDecisionInput, currentStock: e.target.value })}
+                placeholder="Current Stock"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <input
+                type="number"
+                step="0.01"
+                value={directDecisionInput.unitCost}
+                onChange={(e) => setDirectDecisionInput({ ...directDecisionInput, unitCost: e.target.value })}
+                placeholder="Unit Cost"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <button
+              onClick={handleDirectDecision}
+              disabled={loadingDirectDecision}
+              className="btn-primary"
+            >
+              {loadingDirectDecision ? 'Loading...' : 'Get Decision'}
+            </button>
+            {directDecisionResult && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                <pre className="text-sm overflow-auto">{JSON.stringify(directDecisionResult, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+
+          {/* Forecast and Decide Endpoint */}
+          <div className="border rounded-lg p-4">
+            <h3 className="font-semibold mb-2">3. Forecast and Decide Endpoint</h3>
+            <p className="text-sm text-gray-600 mb-2">Enter sales history, current stock, and unit cost</p>
+            <div className="space-y-2 mb-2">
+              <input
+                type="text"
+                value={directForecastDecideInput.salesHistory}
+                onChange={(e) => setDirectForecastDecideInput({ ...directForecastDecideInput, salesHistory: e.target.value })}
+                placeholder="Sales History (comma-separated): 10, 15, 12, 18, 20"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  value={directForecastDecideInput.currentStock}
+                  onChange={(e) => setDirectForecastDecideInput({ ...directForecastDecideInput, currentStock: e.target.value })}
+                  placeholder="Current Stock"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={directForecastDecideInput.unitCost}
+                  onChange={(e) => setDirectForecastDecideInput({ ...directForecastDecideInput, unitCost: e.target.value })}
+                  placeholder="Unit Cost"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </div>
+            <button
+              onClick={handleDirectForecastDecide}
+              disabled={loadingDirectForecastDecide}
+              className="btn-primary"
+            >
+              {loadingDirectForecastDecide ? 'Loading...' : 'Get Forecast & Decision'}
+            </button>
+            {directForecastDecideResult && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                <pre className="text-sm overflow-auto">{JSON.stringify(directForecastDecideResult, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Inventory Table */}

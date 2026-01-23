@@ -18,12 +18,14 @@ export default function ConsumerDashboard() {
   const [intentLoading, setIntentLoading] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
   }, []);
 
   async function loadData() {
+    setError(null);
     try {
       const productsData = await productsApi.getAll();
       setProducts(productsData || []);
@@ -33,14 +35,17 @@ export default function ConsumerDashboard() {
           try {
             const stock = await stockApi.getBySku(p.sku);
             return [p.sku, stock];
-          } catch {
+          } catch (err) {
+            console.warn(`Could not load stock for ${p.sku}:`, err);
             return [p.sku, { sku: p.sku, onHand: 0 }];
           }
         })
       );
 
       setInventory(new Map(stockEntries));
-    } catch {
+    } catch (err: any) {
+      console.error('Error loading products:', err);
+      setError(err?.response?.data?.message || err?.message || 'Failed to load products. Please try again.');
       setProducts([]);
       setInventory(new Map());
     } finally {
@@ -51,9 +56,14 @@ export default function ConsumerDashboard() {
   async function handleIntentBuilder() {
     if (!intentInput.trim()) return;
     setIntentLoading(true);
+    setError(null);
     try {
       const result = await customerIntentApi.processIntent(intentInput);
       setIntentResults(result);
+    } catch (err: any) {
+      console.error('Error processing intent:', err);
+      setError(err?.response?.data?.message || err?.message || 'Failed to process intent. Please try again.');
+      setIntentResults(null);
     } finally {
       setIntentLoading(false);
     }
@@ -74,6 +84,18 @@ export default function ConsumerDashboard() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="mt-2 text-sm text-red-600 hover:text-red-800"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Browse Products</h1>
         {!isAuthenticated ? (
@@ -116,19 +138,28 @@ export default function ConsumerDashboard() {
         />
       </div>
 
+      {products.length === 0 && !loading && (
+        <div className="card text-center py-8">
+          <p className="text-gray-500">No products found. Please check back later.</p>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products
           .filter((p) =>
-            (p.productName || '').toLowerCase().includes(searchQuery.toLowerCase())
+            (p.productName || p.name || '').toLowerCase().includes(searchQuery.toLowerCase())
           )
-          .map((p) => (
-            <ProductCard
-              key={p.sku}
-              product={p}
-              stock={inventory.get(p.sku)}
-              onAddToCart={addToCart}
-            />
-          ))}
+          .map((p) => {
+            const stock = inventory.get(p.sku);
+            return (
+              <ProductCard
+                key={p.sku}
+                product={p}
+                stock={stock}
+                onAddToCart={addToCart}
+              />
+            );
+          })}
       </div>
     </div>
   );

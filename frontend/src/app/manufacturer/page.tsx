@@ -24,9 +24,11 @@ export default function ManufacturerDashboard() {
     try {
       const data = await purchaseOrdersApi.getAll();
       // Filter orders for this manufacturer (in production, backend would filter)
-      setOrders(data);
-    } catch (error) {
+      setOrders(data || []);
+    } catch (error: any) {
       console.error('Error loading orders:', error);
+      // Gracefully handle error - show empty state instead of crashing
+      setOrders([]);
     } finally {
       setLoading(false);
     }
@@ -36,10 +38,9 @@ export default function ManufacturerDashboard() {
     try {
       await purchaseOrdersApi.approve(orderId);
       await loadOrders();
-      alert('Order accepted successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting order:', error);
-      alert('Failed to accept order');
+      alert(error?.response?.data?.message || error?.message || 'Failed to accept order. Please try again.');
     }
   };
 
@@ -54,9 +55,9 @@ export default function ManufacturerDashboard() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error downloading receipt:', error);
-      alert('Failed to download receipt');
+      alert(error?.response?.data?.message || error?.message || 'Failed to download receipt. Please try again.');
     }
   };
 
