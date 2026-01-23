@@ -48,7 +48,7 @@ public class ManufacturerService {
 
     public List<ManufacturerDto> getAllManufacturers() {
         return mapper.toDtoList(
-                manufacturerRepository.findAll()
+                repo.findAll()
         );
     }
 }
