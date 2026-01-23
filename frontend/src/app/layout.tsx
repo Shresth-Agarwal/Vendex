@@ -6,15 +6,11 @@ import { Layout } from '@/components/Layout';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Vendex - Smart B2B Platform',
-  description: 'Connecting consumers, store owners, and manufacturers',
+  title: 'Vendex',
+  description: 'B2B Platform',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body className={inter.className}>

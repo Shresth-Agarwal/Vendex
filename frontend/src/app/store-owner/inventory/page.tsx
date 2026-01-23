@@ -20,6 +20,9 @@ export default function InventoryPage() {
   const [recommendedManufacturer, setRecommendedManufacturer] = useState<any>(null);
   const [loadingRecommendation, setLoadingRecommendation] = useState(false);
   const [forecasts, setForecasts] = useState<Map<string, any>>(new Map());
+  const [manualSku, setManualSku] = useState('');
+  const [manualForecast, setManualForecast] = useState<any>(null);
+  const [loadingManualForecast, setLoadingManualForecast] = useState(false);
 
   useEffect(() => {
     loadInventory();
@@ -142,14 +145,19 @@ export default function InventoryPage() {
     }
   };
 
-  const handleSelectItem = (sku: string, quantity: number) => {
-    const newSelected = new Map(selectedItems);
-    if (quantity > 0) {
-      newSelected.set(sku, quantity);
-    } else {
-      newSelected.delete(sku);
+  const handleManualForecast = async () => {
+    if (!manualSku.trim()) return;
+    
+    setLoadingManualForecast(true);
+    try {
+      const forecast = await inventoryAgentApi.forecastAndDecide(manualSku.trim());
+      setManualForecast({ sku: manualSku.trim(), forecast });
+    } catch (error) {
+      console.error('Error getting manual forecast:', error);
+      alert('Failed to get forecast. Please check the SKU and try again.');
+    } finally {
+      setLoadingManualForecast(false);
     }
-    setSelectedItems(newSelected);
   };
 
   if (loading) {
@@ -212,6 +220,58 @@ export default function InventoryPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* Manual Forecast Input */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <FiTrendingUp className="w-6 h-6 text-primary-600" />
+          <h2 className="text-xl font-bold">Manual Forecast</h2>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Enter a SKU to get AI-powered demand forecast and inventory decision.
+        </p>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={manualSku}
+            onChange={(e) => setManualSku(e.target.value)}
+            placeholder="Enter SKU (e.g., PROD-001)"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <button
+            onClick={handleManualForecast}
+            disabled={loadingManualForecast || !manualSku.trim()}
+            className="btn-primary flex items-center gap-2"
+          >
+            {loadingManualForecast ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <FiTrendingUp className="w-4 h-4" />
+            )}
+            Get Forecast
+          </button>
+        </div>
+        
+        {manualForecast && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h3 className="font-semibold text-green-800 mb-2">Forecast for {manualForecast.sku}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Forecast:</span> {manualForecast.forecast.forecast?.toFixed(1)} units
+              </div>
+              <div>
+                <span className="font-medium">Confidence:</span> {(manualForecast.forecast.confidence * 100)?.toFixed(1)}%
+              </div>
+              <div>
+                <span className="font-medium">Decision:</span> {manualForecast.forecast.decision?.quantity > 0 ? `Order ${manualForecast.forecast.decision.quantity} units` : 'No action needed'}
+              </div>
+              <div>
+                <span className="font-medium">Reason:</span> {manualForecast.forecast.decision?.reason || 'N/A'}
+              </div>
+            </div>
           </div>
         )}
       </div>

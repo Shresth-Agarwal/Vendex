@@ -19,6 +19,9 @@ export default function AnalyticsPage() {
     topProducts: [] as any[],
     lowStockItems: 0,
   });
+  const [manualAnalysisSku, setManualAnalysisSku] = useState('');
+  const [manualAnalysis, setManualAnalysis] = useState<any>(null);
+  const [loadingManualAnalysis, setLoadingManualAnalysis] = useState(false);
 
   useEffect(() => {
     loadAnalytics();
@@ -106,6 +109,30 @@ export default function AnalyticsPage() {
     }
   };
 
+  const handleManualAnalysis = async () => {
+    if (!manualAnalysisSku.trim()) return;
+    
+    setLoadingManualAnalysis(true);
+    try {
+      // Get current stock for the SKU
+      const stockData = await stockApi.getBySku(manualAnalysisSku.trim());
+      const forecast = await inventoryAgentApi.forecastAndDecide(manualAnalysisSku.trim());
+      
+      setManualAnalysis({
+        sku: manualAnalysisSku.trim(),
+        currentStock: stockData.onHand || 0,
+        forecast: forecast.forecast,
+        confidence: forecast.confidence,
+        decision: forecast.decision
+      });
+    } catch (error) {
+      console.error('Error getting manual analysis:', error);
+      alert('Failed to analyze product. Please check the SKU and try again.');
+    } finally {
+      setLoadingManualAnalysis(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -164,6 +191,58 @@ export default function AnalyticsPage() {
             <FiBarChart className="w-8 h-8 text-blue-600" />
           </div>
         </div>
+      </div>
+
+      {/* Manual Forecast Analysis */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <FiTrendingUp className="w-6 h-6 text-primary-600" />
+          <h2 className="text-xl font-bold">Manual Forecast Analysis</h2>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Analyze demand forecasting and inventory decisions for any product SKU.
+        </p>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={manualAnalysisSku}
+            onChange={(e) => setManualAnalysisSku(e.target.value)}
+            placeholder="Enter SKU (e.g., PROD-001)"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <button
+            onClick={handleManualAnalysis}
+            disabled={loadingManualAnalysis || !manualAnalysisSku.trim()}
+            className="btn-primary flex items-center gap-2"
+          >
+            {loadingManualAnalysis ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <FiBarChart className="w-4 h-4" />
+            )}
+            Analyze
+          </button>
+        </div>
+        
+        {manualAnalysis && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h3 className="font-semibold text-purple-800 mb-2">Analysis for {manualAnalysis.sku}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Current Stock:</span> {manualAnalysis.currentStock} units
+              </div>
+              <div>
+                <span className="font-medium">Forecast:</span> {manualAnalysis.forecast?.toFixed(1)} units
+              </div>
+              <div>
+                <span className="font-medium">Confidence:</span> {(manualAnalysis.confidence * 100)?.toFixed(1)}%
+              </div>
+              <div>
+                <span className="font-medium">Recommendation:</span> {manualAnalysis.decision?.quantity > 0 ? `Order ${manualAnalysis.decision.quantity}` : 'Maintain stock'}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Top Products */}

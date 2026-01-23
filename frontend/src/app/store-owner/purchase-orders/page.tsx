@@ -15,6 +15,12 @@ export default function PurchaseOrdersPage() {
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [recommendation, setRecommendation] = useState<any>(null);
   const [loadingRecommendation, setLoadingRecommendation] = useState(false);
+  const [manualPoId, setManualPoId] = useState<number | ''>('');
+  const [manualPaymentMode, setManualPaymentMode] = useState('CREDIT');
+  const [manualRecommendation, setManualRecommendation] = useState<any>(null);
+  const [loadingManualRecommendation, setLoadingManualRecommendation] = useState(false);
+  const [manualReceiptPoId, setManualReceiptPoId] = useState<number | ''>('');
+  const [loadingManualReceipt, setLoadingManualReceipt] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -92,18 +98,23 @@ export default function PurchaseOrdersPage() {
     }
   };
 
-  const handleGetRecommendation = async (poId: number) => {
-    setLoadingRecommendation(true);
+  const handleManualReceiptGeneration = async (poId: number) => {
+    setLoadingManualReceipt(true);
     try {
-      const recommendation = await purchaseOrderAiApi.recommendManufacturer(poId, 'CREDIT');
-      setRecommendation(recommendation);
-      setSelectedOrder(orders.find((o) => o.id === poId));
-      setShowRecommendation(true);
+      const blob = await purchaseOrderAiApi.generateReceipt(poId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `receipt_${poId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
-      console.error('Error getting recommendation:', error);
-      alert('Failed to get manufacturer recommendation');
+      console.error('Error generating manual receipt:', error);
+      alert('Failed to generate receipt. Please check the PO ID and try again.');
     } finally {
-      setLoadingRecommendation(false);
+      setLoadingManualReceipt(false);
     }
   };
 
@@ -157,6 +168,99 @@ export default function PurchaseOrdersPage() {
           <p className="text-2xl font-bold text-blue-600">
             {orders.filter((o) => o.status === 'RECEIVED').length}
           </p>
+        </div>
+      </div>
+
+      {/* Manual AI Recommendation */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <FiPackage className="w-6 h-6 text-primary-600" />
+          <h2 className="text-xl font-bold">AI Manufacturer Recommendation</h2>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Enter a Purchase Order ID to get AI-powered manufacturer recommendations based on payment preferences and reliability.
+        </p>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="number"
+            value={manualPoId || ''}
+            onChange={(e) => setManualPoId(e.target.value ? parseInt(e.target.value) : '')}
+            placeholder="Enter PO ID (e.g., 123)"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <select
+            value={manualPaymentMode}
+            onChange={(e) => setManualPaymentMode(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          >
+            <option value="CREDIT">Credit</option>
+            <option value="CASH">Cash</option>
+            <option value="BANK_TRANSFER">Bank Transfer</option>
+          </select>
+          <button
+            onClick={() => manualPoId && handleManualRecommendation(manualPoId)}
+            disabled={loadingManualRecommendation || !manualPoId}
+            className="btn-primary flex items-center gap-2"
+          >
+            {loadingManualRecommendation ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <FiSend className="w-4 h-4" />
+            )}
+            Get Recommendation
+          </button>
+        </div>
+        
+        {manualRecommendation && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-semibold text-blue-800 mb-2">Recommendation for PO #{manualPoId}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <span className="font-medium">Recommended Manufacturer:</span> {manualRecommendation.manufacturerName || manualRecommendation.name}
+              </div>
+              <div>
+                <span className="font-medium">Payment Mode:</span> {manualPaymentMode}
+              </div>
+              <div>
+                <span className="font-medium">Rating:</span> {manualRecommendation.rating || 'N/A'}
+              </div>
+              <div>
+                <span className="font-medium">Reason:</span> {manualRecommendation.reason || 'AI-powered recommendation'}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Manual Receipt Generation */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <FiDownload className="w-6 h-6 text-primary-600" />
+          <h2 className="text-xl font-bold">Generate Receipt</h2>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Enter a Purchase Order ID to generate a PDF receipt using AI-powered formatting.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            value={manualReceiptPoId || ''}
+            onChange={(e) => setManualReceiptPoId(e.target.value ? parseInt(e.target.value) : '')}
+            placeholder="Enter PO ID (e.g., 123)"
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <button
+            onClick={() => manualReceiptPoId && handleManualReceiptGeneration(manualReceiptPoId)}
+            disabled={loadingManualReceipt || !manualReceiptPoId}
+            className="btn-primary flex items-center gap-2"
+          >
+            {loadingManualReceipt ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <FiDownload className="w-4 h-4" />
+            )}
+            Generate Receipt
+          </button>
         </div>
       </div>
 

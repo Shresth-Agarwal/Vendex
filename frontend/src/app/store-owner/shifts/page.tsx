@@ -20,6 +20,9 @@ export default function ShiftsPage() {
     endTime: '17:00',
     role: 'CASHIER',
   });
+  const [manualRosterDate, setManualRosterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [manualRosterResult, setManualRosterResult] = useState<any>(null);
+  const [loadingManualRoster, setLoadingManualRoster] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -95,6 +98,20 @@ export default function ShiftsPage() {
     }
   };
 
+  const handleManualRosterGeneration = async (date: string) => {
+    setLoadingManualRoster(true);
+    try {
+      const result = await rosterApi.generate(date);
+      setManualRosterResult(result);
+      await loadData(); // Refresh the data
+    } catch (error) {
+      console.error('Error generating manual roster:', error);
+      alert('Failed to generate roster. Please try again.');
+    } finally {
+      setLoadingManualRoster(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -133,6 +150,57 @@ export default function ShiftsPage() {
             Create Shift
           </button>
         </div>
+      </div>
+
+      {/* Manual Roster Generation */}
+      <div className="card">
+        <div className="flex items-center gap-2 mb-4">
+          <FiUsers className="w-6 h-6 text-primary-600" />
+          <h2 className="text-xl font-bold">AI Staff Assignment</h2>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          Generate optimized staff assignments for any date using AI-powered scheduling.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="date"
+            value={manualRosterDate}
+            onChange={(e) => setManualRosterDate(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <button
+            onClick={() => manualRosterDate && handleManualRosterGeneration(manualRosterDate)}
+            disabled={loadingManualRoster || !manualRosterDate}
+            className="btn-primary flex items-center gap-2"
+          >
+            {loadingManualRoster ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : (
+              <FiUsers className="w-4 h-4" />
+            )}
+            Generate Roster
+          </button>
+        </div>
+        
+        {manualRosterResult && (
+          <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+            <h3 className="font-semibold text-green-800 mb-2">Roster Generated for {manualRosterDate}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="font-medium">Assignments:</span> {manualRosterResult.assignments?.length || 0}
+              </div>
+              <div>
+                <span className="font-medium">Coverage:</span> {(manualRosterResult.coveragePercentage * 100)?.toFixed(1)}%
+              </div>
+              <div>
+                <span className="font-medium">Overtime Risk:</span> {manualRosterResult.overtimeRisk ? 'Yes' : 'No'}
+              </div>
+              <div>
+                <span className="font-medium">Status:</span> Success
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Open Shifts */}

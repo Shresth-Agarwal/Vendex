@@ -1,7 +1,6 @@
 'use client';
 
-import { redirect } from 'next/navigation';
-import ConsumerDashboard from '../page';
+import ConsumerDashboard from '../ConsumerDashboard';
 
 export default function ShopPage() {
   return <ConsumerDashboard />;
