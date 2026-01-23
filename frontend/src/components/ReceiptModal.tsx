@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FiDownload, FiMail, FiX } from 'react-icons/fi';
-import { aiApi } from '@/lib/api';
+import { purchaseOrderAiApi } from '@/lib/api';
 
 interface ReceiptModalProps {
   isOpen: boolean;
@@ -27,7 +27,11 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
     setLoading(true);
     try {
-      const blob = await aiApi.generateReceipt(purchaseOrder);
+      const poId = purchaseOrder.id || purchaseOrder.purchaseOrderId;
+      if (!poId) {
+        throw new Error('Purchase order ID not found');
+      }
+      const blob = await purchaseOrderAiApi.generateReceipt(poId);
       const filename = `receipt_${purchaseOrder.purchaseOrderId || 'order'}.pdf`;
       
       if (onDownload) {

@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { InventoryTable } from '@/components/InventoryTable';
-import { inventoryApi, productsApi, aiApi } from '@/lib/api';
-import { FiPackage, FiTrendingUp, FiRefreshCw } from 'react-icons/fi';
+import { productsApi, stockApi, salesApi, inventoryAgentApi } from '@/lib/api';
+import { FiPackage, FiTrendingUp, FiRefreshCw, FiDollarSign } from 'react-icons/fi';
+import Link from 'next/link';
 
 export default function StoreOwnerDashboard() {
   const router = useRouter();
@@ -17,13 +18,10 @@ export default function StoreOwnerDashboard() {
     lowStock: 0,
     outOfStock: 0,
     totalValue: 0,
+    recentSales: 0,
   });
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'STORE_OWNER') {
-      router.push('/login');
-      return;
-    }
     loadInventory();
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadInventory, 30000);
@@ -32,33 +30,63 @@ export default function StoreOwnerDashboard() {
 
   const loadInventory = async () => {
     try {
-      const [stockData, productsData] = await Promise.all([
-        inventoryApi.getAll(),
-        productsApi.getAll(),
-      ]);
+      const productsData = await productsApi.getAll();
+      
+      // Get stock for each product
+      const inventoryWithStock = await Promise.all(
+        productsData.map(async (product: any) => {
+          try {
+            const stock = await stockApi.getBySku(product.sku);
+            return {
+              ...product,
+              ...stock,
+              productName: product.productName || product.name,
+              unitCost: product.unitCost || 0,
+            };
+          } catch (error) {
+            // Stock not found, set to 0
+            return {
+              ...product,
+              sku: product.sku,
+              onHand: 0,
+              lastUpdated: new Date().toISOString(),
+              productName: product.productName || product.name,
+              unitCost: product.unitCost || 0,
+            };
+          }
+        })
+      );
 
-      const inventoryWithProducts = stockData.map((stock: any) => {
-        const product = productsData.find((p: any) => p.sku === stock.sku);
-        return {
-          ...stock,
-          productName: product?.productName || 'Unknown Product',
-          category: product?.category || 'Unknown',
-          unitCost: product?.unitCost || 0,
-        };
-      });
-
-      setInventory(inventoryWithProducts);
+      setInventory(inventoryWithStock);
 
       // Calculate stats
-      const totalItems = inventoryWithProducts.length;
-      const lowStock = inventoryWithProducts.filter((item: any) => item.onHand > 0 && item.onHand < 10).length;
-      const outOfStock = inventoryWithProducts.filter((item: any) => item.onHand === 0).length;
-      const totalValue = inventoryWithProducts.reduce(
-        (sum: number, item: any) => sum + item.onHand * item.unitCost,
+      const totalItems = inventoryWithStock.length;
+      const lowStock = inventoryWithStock.filter((item: any) => item.onHand > 0 && item.onHand < 10).length;
+      const outOfStock = inventoryWithStock.filter((item: any) => item.onHand === 0).length;
+      const totalValue = inventoryWithStock.reduce(
+        (sum: number, item: any) => sum + (item.onHand || 0) * (item.unitCost || 0),
         0
       );
 
-      setStats({ totalItems, lowStock, outOfStock, totalValue });
+      // Get recent sales count (last 7 days)
+      let recentSales = 0;
+      try {
+        const allSales = await Promise.all(
+          inventoryWithStock.slice(0, 10).map(async (item: any) => {
+            try {
+              const sales = await salesApi.getBySku(item.sku);
+              return sales.length;
+            } catch {
+              return 0;
+            }
+          })
+        );
+        recentSales = allSales.reduce((sum, count) => sum + count, 0);
+      } catch (error) {
+        console.error('Error loading sales:', error);
+      }
+
+      setStats({ totalItems, lowStock, outOfStock, totalValue, recentSales });
     } catch (error) {
       console.error('Error loading inventory:', error);
     } finally {
@@ -68,7 +96,7 @@ export default function StoreOwnerDashboard() {
 
   const handleUpdateStock = async (sku: string, onHand: number) => {
     try {
-      await inventoryApi.update(sku, onHand);
+      await stockApi.update(sku, onHand);
       await loadInventory();
     } catch (error) {
       console.error('Error updating stock:', error);
@@ -91,14 +119,39 @@ export default function StoreOwnerDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Store Owner Dashboard</h1>
-        <button onClick={loadInventory} className="btn-secondary flex items-center gap-2">
-          <FiRefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          <button onClick={loadInventory} className="btn-secondary flex items-center gap-2">
+            <FiRefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+          <Link href="/store-owner/inventory" className="btn-primary">
+            Manage Inventory
+          </Link>
+        </div>
+      </div>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Link href="/store-owner/inventory" className="card hover:shadow-lg transition-shadow">
+          <FiPackage className="w-8 h-8 text-primary-600 mb-2" />
+          <p className="font-semibold">Inventory</p>
+        </Link>
+        <Link href="/store-owner/staff" className="card hover:shadow-lg transition-shadow">
+          <FiPackage className="w-8 h-8 text-primary-600 mb-2" />
+          <p className="font-semibold">Staff</p>
+        </Link>
+        <Link href="/store-owner/analytics" className="card hover:shadow-lg transition-shadow">
+          <FiTrendingUp className="w-8 h-8 text-primary-600 mb-2" />
+          <p className="font-semibold">Analytics</p>
+        </Link>
+        <Link href="/store-owner/chat" className="card hover:shadow-lg transition-shadow">
+          <FiPackage className="w-8 h-8 text-primary-600 mb-2" />
+          <p className="font-semibold">Messages</p>
+        </Link>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="card">
           <div className="flex items-center justify-between">
             <div>
@@ -134,17 +187,34 @@ export default function StoreOwnerDashboard() {
                 ${stats.totalValue.toFixed(2)}
               </p>
             </div>
-            <FiTrendingUp className="w-8 h-8 text-green-600" />
+            <FiDollarSign className="w-8 h-8 text-green-600" />
+          </div>
+        </div>
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Recent Sales</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.recentSales}</p>
+            </div>
+            <FiTrendingUp className="w-8 h-8 text-blue-600" />
           </div>
         </div>
       </div>
 
       {/* Inventory Table */}
-      <InventoryTable
-        items={inventory}
-        onUpdateStock={handleUpdateStock}
-        showActions={true}
-      />
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4">Recent Inventory</h2>
+        <InventoryTable
+          items={inventory.slice(0, 10)}
+          onUpdateStock={handleUpdateStock}
+          showActions={true}
+        />
+        <div className="mt-4 text-center">
+          <Link href="/store-owner/inventory" className="text-primary-600 hover:text-primary-800">
+            View All Inventory →
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

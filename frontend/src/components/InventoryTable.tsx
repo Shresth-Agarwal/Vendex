@@ -19,6 +19,8 @@ interface InventoryTableProps {
   onUpdateStock?: (sku: string, onHand: number) => Promise<void>;
   showForecast?: boolean;
   showActions?: boolean;
+  onSelectItem?: (sku: string, quantity: number) => void;
+  selectedItems?: Map<string, number>;
 }
 
 export const InventoryTable: React.FC<InventoryTableProps> = ({
@@ -26,6 +28,8 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
   onUpdateStock,
   showForecast = false,
   showActions = true,
+  onSelectItem,
+  selectedItems,
 }) => {
   const [editingSku, setEditingSku] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
@@ -84,6 +88,11 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Stock
               </th>
+              {onSelectItem && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Select Qty
+                </th>
+              )}
               {showForecast && (
                 <>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -155,6 +164,22 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                       </div>
                     )}
                   </td>
+                  {onSelectItem && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="number"
+                        min="0"
+                        max={item.onHand}
+                        value={selectedItems?.get(item.sku) || 0}
+                        onChange={(e) => {
+                          const qty = parseInt(e.target.value) || 0;
+                          onSelectItem(item.sku, qty);
+                        }}
+                        className="input-field w-20"
+                        placeholder="0"
+                      />
+                    </td>
+                  )}
                   {showForecast && (
                     <>
                       <td className="px-6 py-4 whitespace-nowrap">

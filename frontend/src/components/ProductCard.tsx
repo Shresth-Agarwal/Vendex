@@ -1,22 +1,21 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { FiShoppingCart, FiPackage } from 'react-icons/fi';
-import { getProductImageUrl } from '@/utils/imageUtils';
 
 interface ProductCardProps {
   product: {
     sku: string;
-    productName: string;
+    productName?: string;
+    name?: string;
     category?: string;
-    unitCost: number;
+    unitCost?: number;
     imageUrl?: string;
     description?: string;
   };
   stock?: {
     onHand: number;
-    available: number;
+    available?: number;
   };
   onAddToCart?: (product: any) => void;
   showStock?: boolean;
@@ -28,7 +27,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onAddToCart,
   showStock = true,
 }) => {
-  const imageUrl = getProductImageUrl(product.imageUrl, product.category);
+  const getImageUrl = () => {
+    if (product.imageUrl) {
+      return product.imageUrl.startsWith('http') ? product.imageUrl : `/product/${product.imageUrl}`;
+    }
+    if (product.category) {
+      const categoryLower = product.category.toLowerCase();
+      if (categoryLower.includes('men')) {
+        return '/product/men/default.jpg';
+      } else if (categoryLower.includes('women')) {
+        return '/product/women/default.jpg';
+      }
+    }
+    return '/product/default.jpg';
+  };
+
+  const imageUrl = getImageUrl();
   const isInStock = stock ? stock.onHand > 0 : true;
   const stockStatus = stock
     ? stock.onHand === 0
@@ -37,15 +51,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       ? 'low'
       : 'in'
     : 'unknown';
+  const productName = product.productName || product.name || 'Unknown Product';
 
   return (
     <div className="card hover:shadow-lg transition-shadow">
       <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden bg-gray-100">
-        <Image
+        <img
           src={imageUrl}
-          alt={product.productName}
-          fill
-          className="object-cover"
+          alt={productName}
+          className="w-full h-full object-cover"
           onError={(e) => {
             (e.target as HTMLImageElement).src = '/product/default.jpg';
           }}
@@ -67,7 +81,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       <div className="space-y-2">
         <h3 className="font-semibold text-lg text-gray-900 line-clamp-1">
-          {product.productName}
+          {productName}
         </h3>
         {product.category && (
           <p className="text-sm text-gray-500">{product.category}</p>
@@ -84,8 +98,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
         <div className="flex items-center justify-between pt-2">
-          <span className="text-2xl font-bold text-primary-600">
-            ${product.unitCost.toFixed(2)}
+          <span className="text-2xl font-bold text-blue-600">
+            ${(product.unitCost || 0).toFixed(2)}
           </span>
           {onAddToCart && (
             <button

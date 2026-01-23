@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { staffApi, aiApi } from '@/lib/api';
+import { staffApi, shiftsApi, staffAvailabilityApi } from '@/lib/api';
 import { FiUserPlus, FiEdit2, FiTrash2, FiCalendar, FiClock } from 'react-icons/fi';
+import Link from 'next/link';
 
 export default function StaffPage() {
   const router = useRouter();
@@ -22,10 +23,6 @@ export default function StaffPage() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'STORE_OWNER') {
-      router.push('/login');
-      return;
-    }
     loadData();
   }, [isAuthenticated, user]);
 
@@ -33,7 +30,7 @@ export default function StaffPage() {
     try {
       const [staffData, shiftsData] = await Promise.all([
         staffApi.getAll(),
-        staffApi.getShifts(),
+        shiftsApi.getAll(),
       ]);
       setStaff(staffData);
       setShifts(shiftsData);
@@ -68,7 +65,7 @@ export default function StaffPage() {
       username: staffMember.username,
       email: staffMember.email,
       password: '',
-      role: staffMember.role,
+      role: staffMember.role || 'CASHIER',
     });
     setShowModal(true);
   };
@@ -84,16 +81,25 @@ export default function StaffPage() {
     }
   };
 
-  const handleAssignShift = async (staffId: number, shiftData: any) => {
+  const handleAssignShift = async (shiftId: number, staffId: number) => {
     try {
-      await staffApi.assignShift({
-        staffId,
-        ...shiftData,
-      });
+      await shiftsApi.assignStaff(shiftId, staffId);
       await loadData();
+      alert('Shift assigned successfully');
     } catch (error) {
       console.error('Error assigning shift:', error);
       alert('Failed to assign shift');
+    }
+  };
+
+  const handleGenerateDefaultShifts = async () => {
+    try {
+      await shiftsApi.generateDefault();
+      await loadData();
+      alert('Default shifts generated successfully');
+    } catch (error) {
+      console.error('Error generating shifts:', error);
+      alert('Failed to generate shifts');
     }
   };
 
@@ -112,17 +118,26 @@ export default function StaffPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
-        <button
-          onClick={() => {
-            setEditingStaff(null);
-            setFormData({ username: '', email: '', password: '', role: 'CASHIER' });
-            setShowModal(true);
-          }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <FiUserPlus className="w-4 h-4" />
-          Add Staff
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleGenerateDefaultShifts}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <FiCalendar className="w-4 h-4" />
+            Generate Default Shifts
+          </button>
+          <button
+            onClick={() => {
+              setEditingStaff(null);
+              setFormData({ username: '', email: '', password: '', role: 'CASHIER' });
+              setShowModal(true);
+            }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <FiUserPlus className="w-4 h-4" />
+            Add Staff
+          </button>
+        </div>
       </div>
 
       {/* Staff List */}
@@ -148,13 +163,13 @@ export default function StaffPage() {
             {staff.map((member) => (
               <tr key={member.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  {member.username}
+                  {member.username || member.name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {member.email}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="badge badge-info">{member.role}</span>
+                  <span className="badge badge-info">{member.role || 'STAFF'}</span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <div className="flex items-center gap-2">
@@ -180,20 +195,27 @@ export default function StaffPage() {
 
       {/* Shifts Section */}
       <div className="card">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <FiCalendar className="w-5 h-5" />
-          Staff Shifts
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <FiCalendar className="w-5 h-5" />
+            Staff Shifts
+          </h2>
+          <Link href="/store-owner/shifts" className="text-primary-600 hover:text-primary-800">
+            Manage Shifts →
+          </Link>
+        </div>
         <div className="space-y-2">
-          {shifts.map((shift) => (
+          {shifts.slice(0, 10).map((shift) => (
             <div key={shift.id} className="border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold">{shift.staffName}</p>
+                  <p className="font-semibold">
+                    {shift.staff?.username || shift.staffName || 'Unassigned'}
+                  </p>
                   <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                     <span className="flex items-center gap-1">
                       <FiCalendar className="w-4 h-4" />
-                      {new Date(shift.date).toLocaleDateString()}
+                      {new Date(shift.date || shift.shiftDate).toLocaleDateString()}
                     </span>
                     <span className="flex items-center gap-1">
                       <FiClock className="w-4 h-4" />
@@ -201,10 +223,13 @@ export default function StaffPage() {
                     </span>
                   </div>
                 </div>
-                <span className="badge badge-info">{shift.role}</span>
+                <span className="badge badge-info">{shift.role || shift.staff?.role || 'STAFF'}</span>
               </div>
             </div>
           ))}
+          {shifts.length === 0 && (
+            <p className="text-gray-500 text-center py-4">No shifts scheduled</p>
+          )}
         </div>
       </div>
 

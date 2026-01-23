@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { ChatWindow } from '@/components/ChatWindow';
-import { chatApi, manufacturersApi } from '@/lib/api';
+import { manufacturersApi } from '@/lib/api';
 import { FiMessageCircle } from 'react-icons/fi';
 
 export default function ChatPage() {
@@ -14,35 +14,33 @@ export default function ChatPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [participantName, setParticipantName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [manufacturers, setManufacturers] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'STORE_OWNER') {
-      router.push('/login');
-      return;
-    }
-    loadConversations();
+    loadManufacturers();
   }, [isAuthenticated, user]);
 
-  const loadConversations = async () => {
+  const loadManufacturers = async () => {
     try {
-      const data = await chatApi.getConversations();
-      setConversations(data);
+      const data = await manufacturersApi.getAll();
+      setManufacturers(data);
+      // Create conversations from manufacturers
+      setConversations(data.map((m: any) => ({
+        id: `manufacturer-${m.id || m.manufacturerId}`,
+        participantName: m.name || m.manufacturerName,
+        manufacturerId: m.id || m.manufacturerId,
+        lastMessage: 'Start a conversation...',
+      })));
     } catch (error) {
-      console.error('Error loading conversations:', error);
+      console.error('Error loading manufacturers:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStartConversation = async (manufacturerId: number, manufacturerName: string) => {
-    try {
-      const conversation = await chatApi.createConversation(manufacturerId);
-      setSelectedConversation(conversation.id);
-      setParticipantName(manufacturerName);
-    } catch (error) {
-      console.error('Error creating conversation:', error);
-      alert('Failed to start conversation');
-    }
+  const handleStartConversation = (manufacturerId: number, manufacturerName: string) => {
+    setSelectedConversation(`manufacturer-${manufacturerId}`);
+    setParticipantName(manufacturerName);
   };
 
   if (loading) {
@@ -67,7 +65,7 @@ export default function ChatPage() {
         {/* Conversations List */}
         <div className="lg:col-span-1">
           <div className="card">
-            <h2 className="text-lg font-semibold mb-4">Conversations</h2>
+            <h2 className="text-lg font-semibold mb-4">Manufacturers</h2>
             <div className="space-y-2">
               {conversations.map((conv) => (
                 <button
@@ -90,9 +88,6 @@ export default function ChatPage() {
               ))}
             </div>
           </div>
-
-          {/* Manufacturers List - to start new conversations */}
-          <ManufacturerList onSelect={handleStartConversation} />
         </div>
 
         {/* Chat Window */}
@@ -106,55 +101,11 @@ export default function ChatPage() {
             <div className="card h-[600px] flex items-center justify-center">
               <div className="text-center text-gray-500">
                 <FiMessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                <p>Select a conversation to start messaging</p>
+                <p>Select a manufacturer to start messaging</p>
               </div>
             </div>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ManufacturerList({ onSelect }: { onSelect: (id: number, name: string) => void }) {
-  const [manufacturers, setManufacturers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadManufacturers();
-  }, []);
-
-  const loadManufacturers = async () => {
-    try {
-      const data = await manufacturersApi.getAll();
-      setManufacturers(data);
-    } catch (error) {
-      console.error('Error loading manufacturers:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return <div className="card p-4">Loading manufacturers...</div>;
-  }
-
-  return (
-    <div className="card mt-4">
-      <h3 className="text-md font-semibold mb-3">Start New Conversation</h3>
-      <div className="space-y-2">
-        {manufacturers.map((m) => (
-          <button
-            key={m.id || m.manufacturerId}
-            onClick={() => onSelect(m.id || m.manufacturerId, m.name)}
-            className="w-full text-left p-2 rounded border border-gray-200 hover:border-primary-300 transition-colors"
-          >
-            <p className="font-medium text-sm">{m.name}</p>
-            {m.location && (
-              <p className="text-xs text-gray-500">{m.location}</p>
-            )}
-          </button>
-        ))}
       </div>
     </div>
   );

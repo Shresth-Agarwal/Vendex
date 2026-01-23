@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { InventoryTable } from '@/components/InventoryTable';
 import { ManufacturerCard } from '@/components/ManufacturerCard';
-import { inventoryApi, productsApi, manufacturersApi, aiApi, purchaseOrdersApi } from '@/lib/api';
-import { FiPackage, FiTrendingUp, FiShoppingCart } from 'react-icons/fi';
+import { productsApi, stockApi, manufacturersApi, purchaseOrderAiApi, purchaseOrdersApi, inventoryAgentApi } from '@/lib/api';
+import { FiPackage, FiTrendingUp, FiShoppingCart, FiRefreshCw } from 'react-icons/fi';
+import Link from 'next/link';
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -18,58 +19,55 @@ export default function InventoryPage() {
   const [manufacturers, setManufacturers] = useState<any[]>([]);
   const [recommendedManufacturer, setRecommendedManufacturer] = useState<any>(null);
   const [loadingRecommendation, setLoadingRecommendation] = useState(false);
+  const [forecasts, setForecasts] = useState<Map<string, any>>(new Map());
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'STORE_OWNER') {
-      router.push('/login');
-      return;
-    }
     loadInventory();
   }, [isAuthenticated, user]);
 
   const loadInventory = async () => {
     try {
-      const [stockData, productsData] = await Promise.all([
-        inventoryApi.getAll(),
-        productsApi.getAll(),
-      ]);
-
-      const inventoryWithProducts = await Promise.all(
-        stockData.map(async (stock: any) => {
-          const product = productsData.find((p: any) => p.sku === stock.sku);
-          
-          // Get demand forecast if we have sales history
-          let forecast = undefined;
-          let reorderQty = undefined;
+      const productsData = await productsApi.getAll();
+      
+      const inventoryWithStock = await Promise.all(
+        productsData.map(async (product: any) => {
           try {
-            // This would typically come from sales history
-            // For now, we'll skip if no sales data
-            const salesHistory = []; // Would fetch from sales API
-            if (salesHistory.length > 0) {
-              const forecastData = await aiApi.forecastAndDecide(
-                salesHistory,
-                stock.onHand,
-                product?.unitCost || 0
-              );
-              forecast = forecastData.forecast;
-              reorderQty = forecastData.decision?.recommended_order_quantity;
-            }
+            const stock = await stockApi.getBySku(product.sku);
+            return {
+              ...product,
+              ...stock,
+              productName: product.productName || product.name,
+              unitCost: product.unitCost || 0,
+            };
           } catch (error) {
-            // Forecast not available
+            return {
+              ...product,
+              sku: product.sku,
+              onHand: 0,
+              lastUpdated: new Date().toISOString(),
+              productName: product.productName || product.name,
+              unitCost: product.unitCost || 0,
+            };
           }
-
-          return {
-            ...stock,
-            productName: product?.productName || 'Unknown Product',
-            category: product?.category || 'Unknown',
-            unitCost: product?.unitCost || 0,
-            demandForecast: forecast,
-            reorderQuantity: reorderQty,
-          };
         })
       );
 
-      setInventory(inventoryWithProducts);
+      setInventory(inventoryWithStock);
+
+      // Load forecasts for low stock items
+      const lowStockItems = inventoryWithStock.filter((item: any) => item.onHand < 10);
+      const forecastMap = new Map<string, any>();
+      
+      for (const item of lowStockItems.slice(0, 5)) {
+        try {
+          const forecast = await inventoryAgentApi.forecastAndDecide(item.sku);
+          forecastMap.set(item.sku, forecast);
+        } catch (error) {
+          console.error(`Error getting forecast for ${item.sku}:`, error);
+        }
+      }
+      
+      setForecasts(forecastMap);
     } catch (error) {
       console.error('Error loading inventory:', error);
     } finally {
@@ -79,7 +77,7 @@ export default function InventoryPage() {
 
   const handleUpdateStock = async (sku: string, onHand: number) => {
     try {
-      await inventoryApi.update(sku, onHand);
+      await stockApi.update(sku, onHand);
       await loadInventory();
     } catch (error) {
       console.error('Error updating stock:', error);
@@ -101,34 +99,24 @@ export default function InventoryPage() {
       // Get manufacturer products
       const manufacturersWithProducts = await Promise.all(
         allManufacturers.map(async (m: any) => {
-          const products = await manufacturersApi.getProducts(m.id || m.manufacturerId);
-          return { ...m, products };
+          try {
+            const products = await manufacturersApi.getProducts(m.id || m.manufacturerId);
+            return { ...m, products };
+          } catch {
+            return { ...m, products: [] };
+          }
         })
       );
 
-      // Prepare request
-      const items = Array.from(selectedItems.entries()).map(([sku, quantity]) => ({
-        sku,
-        quantity,
-      }));
-
-      const context = {
-        preferredPaymentMode: 'CREDIT', // Could be from user preferences
-      };
-
-      // Get recommendation
-      const recommendation = await aiApi.recommendManufacturer(
-        items,
-        manufacturersWithProducts,
-        context
-      );
-
-      setRecommendedManufacturer(recommendation);
       setManufacturers(manufacturersWithProducts);
+      
+      // Create a temporary purchase order to get recommendations
+      // Note: In production, you'd create the PO first, then get recommendations
+      // For now, we'll just show all manufacturers
       setShowRequestSupply(true);
     } catch (error) {
-      console.error('Error getting recommendation:', error);
-      alert('Failed to get manufacturer recommendations');
+      console.error('Error getting manufacturers:', error);
+      alert('Failed to load manufacturers');
     } finally {
       setLoadingRecommendation(false);
     }
@@ -136,15 +124,15 @@ export default function InventoryPage() {
 
   const handleSelectManufacturer = async (manufacturer: any) => {
     try {
-      // Create purchase order
+      // Create purchase order items
       const items = Array.from(selectedItems.entries()).map(([sku, quantity]) => ({
         sku,
         quantity,
       }));
 
-      // This would typically create a PO via the backend
+      // Note: Purchase order creation would typically be done through a separate endpoint
       // For now, we'll show a success message
-      alert(`Purchase order created with ${manufacturer.name}`);
+      alert(`Purchase order request created with ${manufacturer.name || manufacturer.manufacturerName}`);
       setSelectedItems(new Map());
       setShowRequestSupply(false);
       await loadInventory();
@@ -152,6 +140,16 @@ export default function InventoryPage() {
       console.error('Error creating purchase order:', error);
       alert('Failed to create purchase order');
     }
+  };
+
+  const handleSelectItem = (sku: string, quantity: number) => {
+    const newSelected = new Map(selectedItems);
+    if (quantity > 0) {
+      newSelected.set(sku, quantity);
+    } else {
+      newSelected.delete(sku);
+    }
+    setSelectedItems(newSelected);
   };
 
   if (loading) {
@@ -169,53 +167,64 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
-        <button
-          onClick={handleRequestSupply}
-          disabled={selectedItems.size === 0 || loadingRecommendation}
-          className="btn-primary flex items-center gap-2"
-        >
-          <FiShoppingCart className="w-4 h-4" />
-          {loadingRecommendation ? 'Loading...' : 'Request Supply'}
-        </button>
+        <div className="flex gap-2">
+          <button onClick={loadInventory} className="btn-secondary flex items-center gap-2">
+            <FiRefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+          <button
+            onClick={handleRequestSupply}
+            disabled={selectedItems.size === 0 || loadingRecommendation}
+            className="btn-primary flex items-center gap-2"
+          >
+            <FiShoppingCart className="w-4 h-4" />
+            {loadingRecommendation ? 'Loading...' : 'Request Supply'}
+          </button>
+        </div>
       </div>
 
       {/* Demand Forecast Section */}
       <div className="card bg-gradient-to-r from-blue-50 to-purple-50">
         <div className="flex items-center gap-2 mb-4">
           <FiTrendingUp className="w-6 h-6 text-primary-600" />
-          <h2 className="text-xl font-bold">Demand Forecast</h2>
+          <h2 className="text-xl font-bold">AI Demand Forecast</h2>
         </div>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 mb-4">
           AI-powered demand predictions help you optimize inventory levels and reduce stockouts.
         </p>
+        {forecasts.size > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Array.from(forecasts.entries()).map(([sku, forecast]) => {
+              const item = inventory.find((i) => i.sku === sku);
+              return (
+                <div key={sku} className="bg-white p-4 rounded-lg border">
+                  <p className="font-semibold">{item?.productName || sku}</p>
+                  {forecast.forecast && (
+                    <p className="text-sm text-gray-600">
+                      Forecast: {forecast.forecast.demand_forecast || 'N/A'}
+                    </p>
+                  )}
+                  {forecast.decision && (
+                    <p className="text-sm text-primary-600">
+                      Recommended Order: {forecast.decision.recommended_order_quantity || 0}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Inventory Table with Forecast */}
+      {/* Inventory Table */}
       <InventoryTable
         items={inventory}
         onUpdateStock={handleUpdateStock}
         showForecast={true}
         showActions={true}
+        onSelectItem={handleSelectItem}
+        selectedItems={selectedItems}
       />
-
-      {/* Smart Badges Info */}
-      <div className="card bg-gray-50">
-        <h3 className="text-lg font-semibold mb-3">Smart Badges</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="badge badge-success">In Stock</span>
-            <span className="text-gray-600">Stock level above 10 units</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="badge badge-warning">Low Stock</span>
-            <span className="text-gray-600">Stock level between 1-10 units</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="badge badge-danger">Out of Stock</span>
-            <span className="text-gray-600">Stock level at 0</span>
-          </div>
-        </div>
-      </div>
 
       {/* Request Supply Modal */}
       {showRequestSupply && (

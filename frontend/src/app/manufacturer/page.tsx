@@ -3,22 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { ReceiptModal } from '@/components/ReceiptModal';
-import { purchaseOrdersApi, chatApi } from '@/lib/api';
+import { purchaseOrdersApi, purchaseOrderAiApi } from '@/lib/api';
 import { FiPackage, FiCheck, FiX, FiDownload, FiMessageCircle } from 'react-icons/fi';
+import Link from 'next/link';
 
 export default function ManufacturerDashboard() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedReceipt, setSelectedReceipt] = useState<any>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'MANUFACTURER') {
-      router.push('/login');
-      return;
-    }
     loadOrders();
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadOrders, 30000);
@@ -27,7 +22,6 @@ export default function ManufacturerDashboard() {
 
   const loadOrders = async () => {
     try {
-      // Get orders for this manufacturer
       const data = await purchaseOrdersApi.getAll();
       // Filter orders for this manufacturer (in production, backend would filter)
       setOrders(data);
@@ -49,21 +43,21 @@ export default function ManufacturerDashboard() {
     }
   };
 
-  const handleReject = async (orderId: number) => {
-    if (!confirm('Are you sure you want to reject this order?')) return;
+  const handleDownloadReceipt = async (orderId: number) => {
     try {
-      // This would typically be a separate reject endpoint
-      // For now, we'll just show a message
-      alert('Order rejected');
-      await loadOrders();
+      const blob = await purchaseOrderAiApi.generateReceipt(orderId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `receipt_${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
-      console.error('Error rejecting order:', error);
-      alert('Failed to reject order');
+      console.error('Error downloading receipt:', error);
+      alert('Failed to download receipt');
     }
-  };
-
-  const handleDownloadReceipt = (order: any) => {
-    setSelectedReceipt(order);
   };
 
   const getStatusBadge = (status: string) => {
@@ -91,7 +85,18 @@ export default function ManufacturerDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Manufacturer Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Manufacturer Dashboard</h1>
+        <div className="flex gap-2">
+          <Link href="/manufacturer/orders" className="btn-primary">
+            View All Orders
+          </Link>
+          <Link href="/manufacturer/chat" className="btn-secondary flex items-center gap-2">
+            <FiMessageCircle className="w-4 h-4" />
+            Messages
+          </Link>
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -119,87 +124,66 @@ export default function ManufacturerDashboard() {
         </div>
       </div>
 
-      {/* Orders Table */}
-      <div className="card overflow-hidden p-0">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Order ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Items
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order) => (
-              <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  #{order.id}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(order.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {order.items?.length || 0} items
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+      {/* Recent Orders */}
+      <div className="card">
+        <h2 className="text-xl font-bold mb-4">Recent Orders</h2>
+        <div className="space-y-4">
+          {orders.slice(0, 5).map((order) => (
+            <div key={order.id} className="border rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold">Order #{order.id}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(order.createdAt || order.orderDate).toLocaleDateString()}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {order.items?.length || order.purchaseOrderItems?.length || 0} items
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
                   {getStatusBadge(order.status)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <div className="flex items-center gap-2">
-                    {order.status === 'PENDING' && (
-                      <>
-                        <button
-                          onClick={() => handleAccept(order.id)}
-                          className="text-green-600 hover:text-green-800 flex items-center gap-1"
-                        >
-                          <FiCheck className="w-4 h-4" />
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleReject(order.id)}
-                          className="text-red-600 hover:text-red-800 flex items-center gap-1"
-                        >
-                          <FiX className="w-4 h-4" />
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    {order.status !== 'PENDING' && (
+                  {order.status === 'PENDING' && (
+                    <>
                       <button
-                        onClick={() => handleDownloadReceipt(order)}
-                        className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
+                        onClick={() => handleAccept(order.id)}
+                        className="text-green-600 hover:text-green-800 flex items-center gap-1"
                       >
-                        <FiDownload className="w-4 h-4" />
-                        Receipt
+                        <FiCheck className="w-4 h-4" />
+                        Accept
                       </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      <button
+                        className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                      >
+                        <FiX className="w-4 h-4" />
+                        Reject
+                      </button>
+                    </>
+                  )}
+                  {order.status !== 'PENDING' && (
+                    <button
+                      onClick={() => handleDownloadReceipt(order.id)}
+                      className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
+                    >
+                      <FiDownload className="w-4 h-4" />
+                      Receipt
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          {orders.length === 0 && (
+            <p className="text-gray-500 text-center py-4">No orders yet</p>
+          )}
+        </div>
+        {orders.length > 5 && (
+          <div className="mt-4 text-center">
+            <Link href="/manufacturer/orders" className="text-primary-600 hover:text-primary-800">
+              View All Orders →
+            </Link>
+          </div>
+        )}
       </div>
-
-      {selectedReceipt && (
-        <ReceiptModal
-          isOpen={!!selectedReceipt}
-          onClose={() => setSelectedReceipt(null)}
-          purchaseOrder={selectedReceipt}
-        />
-      )}
     </div>
   );
 }

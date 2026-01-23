@@ -2,16 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { ProductCard } from '@/components/ProductCard';
-import { productsApi, inventoryApi, ordersApi, aiApi } from '@/lib/api';
-import { FiSearch, FiShoppingCart, FiSparkles } from 'react-icons/fi';
+import { productsApi, stockApi, salesApi, customerIntentApi } from '@/lib/api';
+import { FiSearch, FiShoppingCart, FiSparkles, FiLogIn } from 'react-icons/fi';
 
 export default function ConsumerDashboard() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const [products, setProducts] = useState<any[]>([]);
-  const [inventory, setInventory] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<Map<string, any>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<Map<string, number>>(new Map());
   const [intentInput, setIntentInput] = useState('');
@@ -21,21 +22,26 @@ export default function ConsumerDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'CONSUMER') {
-      router.push('/login');
-      return;
-    }
     loadData();
-  }, [isAuthenticated, user]);
+  }, []);
 
   const loadData = async () => {
     try {
-      const [productsData, inventoryData] = await Promise.all([
-        productsApi.getAll(),
-        inventoryApi.getAll(),
-      ]);
+      const productsData = await productsApi.getAll();
       setProducts(productsData);
-      setInventory(inventoryData);
+
+      // Load stock for all products
+      const stockMap = new Map<string, any>();
+      for (const product of productsData) {
+        try {
+          const stock = await stockApi.getBySku(product.sku);
+          stockMap.set(product.sku, stock);
+        } catch (error) {
+          // Stock not found, set to 0
+          stockMap.set(product.sku, { sku: product.sku, onHand: 0 });
+        }
+      }
+      setInventory(stockMap);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -48,7 +54,7 @@ export default function ConsumerDashboard() {
 
     setIntentLoading(true);
     try {
-      const result = await aiApi.processIntent(intentInput, inventory);
+      const result = await customerIntentApi.processIntent(intentInput);
       setIntentResults(result);
       
       // Auto-add items to cart if action is SUCCESS
@@ -57,7 +63,7 @@ export default function ConsumerDashboard() {
         result.bundle.forEach((item: any) => {
           if (item.status === 'AVAILABLE') {
             const currentQty = newCart.get(item.sku) || 0;
-            newCart.set(item.sku, currentQty + item.quantity_recommended);
+            newCart.set(item.sku, currentQty + (item.quantity_recommended || 1));
           }
         });
         setCart(newCart);
@@ -71,10 +77,19 @@ export default function ConsumerDashboard() {
   };
 
   const addToCart = (product: any) => {
-    const newCart = new Map(cart);
-    const currentQty = newCart.get(product.sku) || 0;
-    newCart.set(product.sku, currentQty + 1);
-    setCart(newCart);
+    const stock = inventory.get(product.sku);
+    if (stock && stock.onHand > 0) {
+      const newCart = new Map(cart);
+      const currentQty = newCart.get(product.sku) || 0;
+      if (currentQty < stock.onHand) {
+        newCart.set(product.sku, currentQty + 1);
+        setCart(newCart);
+      } else {
+        alert('Not enough stock available');
+      }
+    } else {
+      alert('Product out of stock');
+    }
   };
 
   const removeFromCart = (sku: string) => {
@@ -84,6 +99,11 @@ export default function ConsumerDashboard() {
   };
 
   const updateCartQuantity = (sku: string, quantity: number) => {
+    const stock = inventory.get(sku);
+    if (stock && quantity > stock.onHand) {
+      alert('Not enough stock available');
+      return;
+    }
     if (quantity <= 0) {
       removeFromCart(sku);
       return;
@@ -97,19 +117,18 @@ export default function ConsumerDashboard() {
     if (cart.size === 0) return;
 
     try {
-      const orderItems = Array.from(cart.entries()).map(([sku, quantity]) => {
+      // Create sales records for each item
+      const salesPromises = Array.from(cart.entries()).map(async ([sku, quantity]) => {
         const product = products.find((p) => p.sku === sku);
-        return {
+        return salesApi.create({
           sku,
-          quantity,
+          quantitySold: quantity,
+          saleDate: new Date().toISOString().split('T')[0],
           unitPrice: product?.unitCost || 0,
-        };
+        });
       });
 
-      await ordersApi.create({
-        items: orderItems,
-        customerId: user?.id,
-      });
+      await Promise.all(salesPromises);
 
       alert('Order placed successfully!');
       setCart(new Map());
@@ -121,19 +140,14 @@ export default function ConsumerDashboard() {
     }
   };
 
-  const getProductWithStock = (product: any) => {
-    const stock = inventory.find((s) => s.sku === product.sku);
-    return { product, stock };
-  };
-
   const filteredProducts = products.filter((p) =>
-    p.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+    (p.productName || p.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (p.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const cartItems = Array.from(cart.entries()).map(([sku, quantity]) => {
     const product = products.find((p) => p.sku === sku);
-    const stock = inventory.find((s) => s.sku === sku);
+    const stock = inventory.get(sku);
     return { product, stock, quantity };
   });
 
@@ -156,19 +170,29 @@ export default function ConsumerDashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Consumer Dashboard</h1>
-        <button
-          onClick={() => setShowCart(!showCart)}
-          className="btn-primary flex items-center gap-2 relative"
-        >
-          <FiShoppingCart className="w-5 h-5" />
-          Cart
-          {cart.size > 0 && (
-            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              {cart.size}
-            </span>
+        <h1 className="text-3xl font-bold text-gray-900">Browse Products</h1>
+        <div className="flex items-center gap-4">
+          {!isAuthenticated && (
+            <Link href="/login" className="btn-secondary flex items-center gap-2">
+              <FiLogIn className="w-4 h-4" />
+              Sign In
+            </Link>
           )}
-        </button>
+          {isAuthenticated && (
+            <button
+              onClick={() => setShowCart(!showCart)}
+              className="btn-primary flex items-center gap-2 relative"
+            >
+              <FiShoppingCart className="w-5 h-5" />
+              Cart
+              {cart.size > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {cart.size}
+                </span>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Intent Builder */}
@@ -199,7 +223,7 @@ export default function ConsumerDashboard() {
         </div>
         {intentResults && (
           <div className="mt-4 p-4 bg-white rounded-lg border">
-            <p className="font-semibold mb-2">{intentResults.message}</p>
+            <p className="font-semibold mb-2">{intentResults.message || 'Intent processed'}</p>
             {intentResults.action === 'CLARIFY' && intentResults.clarifying_question && (
               <p className="text-sm text-gray-600">{intentResults.clarifying_question}</p>
             )}
@@ -209,7 +233,7 @@ export default function ConsumerDashboard() {
                 <ul className="list-disc list-inside text-sm text-gray-600">
                   {intentResults.bundle.map((item: any, idx: number) => (
                     <li key={idx}>
-                      {item.sku} - Qty: {item.quantity_recommended} ({item.status})
+                      {item.sku} - Qty: {item.quantity_recommended || 1} ({item.status})
                     </li>
                   ))}
                 </ul>
@@ -234,7 +258,7 @@ export default function ConsumerDashboard() {
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredProducts.map((product) => {
-          const { stock } = getProductWithStock(product);
+          const stock = inventory.get(product.sku);
           return (
             <ProductCard
               key={product.sku}
@@ -246,8 +270,8 @@ export default function ConsumerDashboard() {
         })}
       </div>
 
-      {/* Cart Modal */}
-      {showCart && (
+      {/* Cart Modal - Only show if authenticated */}
+      {showCart && isAuthenticated && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="p-6">
@@ -259,8 +283,8 @@ export default function ConsumerDashboard() {
                   {cartItems.map(({ product, stock, quantity }) => (
                     <div key={product.sku} className="flex items-center justify-between border-b pb-4">
                       <div>
-                        <h3 className="font-semibold">{product.productName}</h3>
-                        <p className="text-sm text-gray-500">${product.unitCost.toFixed(2)} each</p>
+                        <h3 className="font-semibold">{product.productName || product.name}</h3>
+                        <p className="text-sm text-gray-500">${(product.unitCost || 0).toFixed(2)} each</p>
                         {stock && (
                           <p className="text-xs text-gray-400">Stock: {stock.onHand}</p>
                         )}
@@ -282,7 +306,7 @@ export default function ConsumerDashboard() {
                           </button>
                         </div>
                         <span className="font-semibold w-24 text-right">
-                          ${(product.unitCost * quantity).toFixed(2)}
+                          ${((product.unitCost || 0) * quantity).toFixed(2)}
                         </span>
                         <button
                           onClick={() => removeFromCart(product.sku)}
