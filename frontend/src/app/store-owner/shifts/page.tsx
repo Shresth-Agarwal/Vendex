@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { shiftsApi, staffApi, rosterApi } from '@/lib/api';
-import { FiCalendar, FiClock, FiUser, FiPlus, FiRefreshCw } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiUser, FiUsers, FiPlus, FiRefreshCw } from 'react-icons/fi';
 
 export default function ShiftsPage() {
   const router = useRouter();

@@ -1,4 +1,5 @@
 import json
+import os
 from fpdf import FPDF
 
 # 1. THE PDF GENERATOR CLASS
@@ -67,5 +68,6 @@ def create_receipt_pdf(data, filename="receipt.pdf"):
     pdf.cell(30, 10, "Grand Total:", ln=False)
     pdf.cell(40, 10, f"Rs. {data['totals']['grandTotal']}", ln=True, align="R")
 
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     pdf.output(filename)
     return filename

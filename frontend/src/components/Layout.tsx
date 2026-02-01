@@ -1,6 +1,6 @@
-'use client';
+ 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
@@ -45,6 +45,35 @@ const allRoutes = [
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuthStore();
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    function onAppError(e: Event) {
+      // @ts-ignore
+      const msg = (e as CustomEvent)?.detail?.message || 'An error occurred';
+      setGlobalError(msg);
+    }
+
+    function onAppSuccess(e: Event) {
+      // @ts-ignore
+      const msg = (e as CustomEvent)?.detail?.message || 'Success';
+      setGlobalSuccess(msg);
+      // auto-dismiss success after 3s
+      setTimeout(() => setGlobalSuccess(null), 3000);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('app-error', onAppError as EventListener);
+      window.addEventListener('app-success', onAppSuccess as EventListener);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('app-error', onAppError as EventListener);
+        window.removeEventListener('app-success', onAppSuccess as EventListener);
+      }
+    };
+  }, []);
 
   // Don't show navigation on home page or login page
   if (pathname === '/' || pathname === '/login') {
@@ -141,6 +170,37 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       </nav>
+      {globalError && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="flex justify-between items-start gap-4">
+              <p className="text-red-800 text-sm">{globalError}</p>
+              <button
+                className="text-red-600 text-sm hover:text-red-800"
+                onClick={() => setGlobalError(null)}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {globalSuccess && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="flex justify-between items-start gap-4">
+              <p className="text-green-800 text-sm">{globalSuccess}</p>
+              <button
+                className="text-green-600 text-sm hover:text-green-800"
+                onClick={() => setGlobalSuccess(null)}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
       </main>

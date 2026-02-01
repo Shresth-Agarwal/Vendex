@@ -21,6 +21,7 @@ export default function PurchaseOrdersPage() {
   const [loadingManualRecommendation, setLoadingManualRecommendation] = useState(false);
   const [manualReceiptPoId, setManualReceiptPoId] = useState<number | ''>('');
   const [loadingManualReceipt, setLoadingManualReceipt] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrders();
@@ -118,6 +119,37 @@ export default function PurchaseOrdersPage() {
     }
   };
 
+  const handleGetRecommendation = async (poId: number) => {
+    setSelectedOrder(orders.find(o => o.id === poId));
+    setLoadingRecommendation(true);
+    setError(null);
+    try {
+      const result = await purchaseOrderAiApi.recommendManufacturer(poId, manualPaymentMode);
+      setRecommendation(result);
+      setShowRecommendation(true);
+    } catch (error: any) {
+      console.error('Error getting recommendation:', error);
+      alert(error?.response?.data?.message || error?.message || 'Failed to get recommendation. Please try again.');
+    } finally {
+      setLoadingRecommendation(false);
+    }
+  };
+
+  const handleManualRecommendation = async (poId: number) => {
+    setLoadingManualRecommendation(true);
+    setError(null);
+    try {
+      const result = await purchaseOrderAiApi.recommendManufacturer(poId, manualPaymentMode);
+      setManualRecommendation(result);
+    } catch (error: any) {
+      console.error('Error getting manual recommendation:', error);
+      alert(error?.response?.data?.message || error?.message || 'Failed to get recommendation. Please check the PO ID and try again.');
+      setManualRecommendation(null);
+    } finally {
+      setLoadingManualRecommendation(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; badge: string }> = {
       PENDING: { label: 'Pending', badge: 'badge-warning' },
@@ -143,6 +175,18 @@ export default function PurchaseOrdersPage() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="mt-2 text-sm text-red-600 hover:text-red-800"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
       <h1 className="text-3xl font-bold text-gray-900">Purchase Orders</h1>
 
       {/* Stats */}

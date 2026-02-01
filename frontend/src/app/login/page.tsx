@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 
@@ -15,6 +15,17 @@ export default function LoginPage() {
   const router = useRouter();
   const { login, register, isLoading } = useAuthStore();
 
+  // Preserve returnTo redirect and auto-redirect when already authenticated
+  const searchParams = useSearchParams();
+  const returnToParam = searchParams?.get('returnTo') || '';
+  const { isAuthenticated } = useAuthStore();
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      const target = returnToParam ? decodeURIComponent(returnToParam) : '/user/profile';
+      router.replace(target);
+    }
+  }, [isAuthenticated, router, returnToParam]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -26,8 +37,9 @@ export default function LoginPage() {
         await register({ email, username, password, role });
       }
       
-      // Redirect will happen automatically via the auth store
-      router.push('/');
+      // Redirect to returnTo (if provided) or profile after successful login
+      const target = returnToParam ? decodeURIComponent(returnToParam) : '/user/profile';
+      router.push(target);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Authentication failed');
     }
