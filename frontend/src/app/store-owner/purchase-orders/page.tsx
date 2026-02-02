@@ -10,7 +10,8 @@ export default function PurchaseOrdersPage() {
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const [orders, setOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showRecommendation, setShowRecommendation] = useState(false);
   const [recommendation, setRecommendation] = useState<any>(null);
@@ -22,15 +23,21 @@ export default function PurchaseOrdersPage() {
   const [manualReceiptPoId, setManualReceiptPoId] = useState<number | ''>('');
   const [loadingManualReceipt, setLoadingManualReceipt] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [listExpanded, setListExpanded] = useState(false);
 
-  useEffect(() => {
-    loadOrders();
-  }, [isAuthenticated, user]);
+  // New PO creation state
+  const [newPoItems, setNewPoItems] = useState<Array<{ sku: string; quantity: number }>>([
+    { sku: '', quantity: 1 },
+  ]);
+  const [newPoConfidence, setNewPoConfidence] = useState<number | ''>('');
+  const [creatingPo, setCreatingPo] = useState(false);
 
   const loadOrders = async () => {
+    setLoading(true);
     try {
       const data = await purchaseOrdersApi.getAll();
       setOrders(data);
+      setHasLoaded(true);
     } catch (error) {
       console.error('Error loading purchase orders:', error);
     } finally {
@@ -79,6 +86,18 @@ export default function PurchaseOrdersPage() {
     } catch (error) {
       console.error('Error marking as received:', error);
       alert('Failed to update purchase order');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this purchase order?')) return;
+    try {
+      await purchaseOrdersApi.delete(id);
+      await loadOrders();
+      alert('Purchase order deleted');
+    } catch (error) {
+      console.error('Error deleting purchase order:', error);
+      alert('Failed to delete purchase order');
     }
   };
 
@@ -189,30 +208,244 @@ export default function PurchaseOrdersPage() {
       
       <h1 className="text-3xl font-bold text-gray-900">Purchase Orders</h1>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <p className="text-sm text-gray-600">Total Orders</p>
-          <p className="text-2xl font-bold">{orders.length}</p>
+      {/* Create Purchase Order */}
+      <div className="card">
+        <h2 className="text-xl font-bold mb-2">Create Purchase Order</h2>
+        <p className="text-sm text-gray-600 mb-3">Add items (SKU + quantity) and optionally a confidence score, then create a new PO.</p>
+        {newPoItems.map((it, idx) => (
+          <div key={idx} className="flex gap-2 items-center mb-2">
+            <input
+              placeholder="SKU"
+              value={it.sku}
+              onChange={(e) => {
+                const copy = [...newPoItems];
+                copy[idx].sku = e.target.value;
+                setNewPoItems(copy);
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+            />
+            <input
+              type="number"
+              min={1}
+              value={it.quantity}
+              onChange={(e) => {
+                const copy = [...newPoItems];
+                copy[idx].quantity = parseInt(e.target.value || '1', 10);
+                setNewPoItems(copy);
+              }}
+              className="w-28 px-3 py-2 border border-gray-300 rounded-md"
+            />
+            <button
+              onClick={() => {
+                const copy = [...newPoItems];
+                copy.splice(idx, 1);
+                setNewPoItems(copy.length ? copy : [{ sku: '', quantity: 1 }]);
+              }}
+              className="text-red-600"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => setNewPoItems([...newPoItems, { sku: '', quantity: 1 }])}
+            className="btn-secondary"
+          >
+            Add Item
+          </button>
+          <input
+            type="number"
+            placeholder="Confidence (optional)"
+            value={newPoConfidence as any}
+            onChange={(e) => setNewPoConfidence(e.target.value ? parseFloat(e.target.value) : '')}
+            className="px-3 py-2 border border-gray-300 rounded-md w-56"
+          />
+          <button
+            onClick={async () => {
+              // Create PO
+              setCreatingPo(true);
+              try {
+                const payload: any = {
+                  items: newPoItems.filter(i => i.sku && i.quantity > 0),
+                };
+                if (newPoConfidence !== '') payload.confidence = Number(newPoConfidence);
+                await purchaseOrdersApi.create(payload);
+                alert('Purchase order created');
+                setNewPoItems([{ sku: '', quantity: 1 }]);
+                setNewPoConfidence('');
+                await loadOrders();
+              } catch (err) {
+                console.error('Error creating PO:', err);
+                alert('Failed to create purchase order');
+              } finally {
+                setCreatingPo(false);
+              }
+            }}
+            disabled={creatingPo}
+            className="btn-primary"
+          >
+            {creatingPo ? 'Creating...' : 'Create Purchase Order'}
+          </button>
         </div>
-        <div className="card">
-          <p className="text-sm text-gray-600">Pending</p>
-          <p className="text-2xl font-bold text-yellow-600">
-            {orders.filter((o) => o.status === 'PENDING').length}
-          </p>
+      </div>
+
+      {/* Purchase Orders List Section */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => setListExpanded(!listExpanded)}
+            className="btn-secondary text-sm flex items-center gap-2"
+          >
+            {listExpanded ? '▼' : '▶'} Purchase Orders List ({orders.length})
+          </button>
+          {hasLoaded && (
+            <button onClick={loadOrders} className="btn-secondary text-sm">Refresh</button>
+          )}
         </div>
-        <div className="card">
-          <p className="text-sm text-gray-600">Approved</p>
-          <p className="text-2xl font-bold text-green-600">
-            {orders.filter((o) => o.status === 'APPROVED').length}
-          </p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-gray-600">Received</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {orders.filter((o) => o.status === 'RECEIVED').length}
-          </p>
-        </div>
+        
+        {!hasLoaded ? (
+          <div className="text-center py-8">
+            <p className="text-gray-600 mb-4">Click the button below to load all purchase orders</p>
+            <button onClick={loadOrders} className="btn-primary">View All Purchase Orders</button>
+          </div>
+        ) : listExpanded ? (
+          <>
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-gray-50 p-3 rounded">
+                <p className="text-sm text-gray-600">Total Orders</p>
+                <p className="text-2xl font-bold">{orders.length}</p>
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                <p className="text-sm text-gray-600">Pending</p>
+                <p className="text-2xl font-bold text-yellow-600">
+                  {orders.filter((o) => o.status === 'PENDING_APPROVAL').length}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                <p className="text-sm text-gray-600">Approved</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {orders.filter((o) => o.status === 'APPROVED').length}
+                </p>
+              </div>
+              <div className="bg-gray-50 p-3 rounded">
+                <p className="text-sm text-gray-600">Received</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {orders.filter((o) => o.status === 'RECEIVED').length}
+                </p>
+              </div>
+            </div>
+
+            {/* Orders Table */}
+            <div className="overflow-hidden border border-gray-200 rounded-lg">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Order ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Items
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {orders.map((order) => (
+                    <tr key={order.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        #{order.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(order.createdAt || order.orderDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {order.items?.length || order.purchaseOrderItems?.length || 0} items
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(order.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {order.status === 'PENDING_APPROVAL' && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(order.id)}
+                                className="text-green-600 hover:text-green-800 flex items-center gap-1"
+                              >
+                                <FiCheck className="w-4 h-4" />
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleGetRecommendation(order.id)}
+                                disabled={loadingRecommendation}
+                                className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
+                              >
+                                Get Recommendation
+                              </button>
+                              <button
+                                onClick={() => handleDelete(order.id)}
+                                className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                              >
+                                <FiX className="w-4 h-4" />
+                                Delete
+                              </button>
+                            </>
+                          )}
+                          {order.status === 'APPROVED' && !order.manufacturerId && (
+                            <button
+                              onClick={() => handleGetRecommendation(order.id)}
+                              disabled={loadingRecommendation}
+                              className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
+                            >
+                              Finalize Manufacturer
+                            </button>
+                          )}
+                          {order.status === 'APPROVED' && order.manufacturerId && (
+                            <button
+                              onClick={() => handleMarkSent(order.id)}
+                              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                            >
+                              <FiSend className="w-4 h-4" />
+                              Mark Sent
+                            </button>
+                          )}
+                          {order.status === 'SENT_TO_MANUFACTURER' && (
+                            <button
+                              onClick={() => handleMarkReceived(order.id)}
+                              className="text-green-600 hover:text-green-800 flex items-center gap-1"
+                            >
+                              <FiTruck className="w-4 h-4" />
+                              Mark Received
+                            </button>
+                          )}
+                          {order.status !== 'PENDING_APPROVAL' && (
+                            <button
+                              onClick={() => handleGenerateReceipt(order.id)}
+                              className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
+                            >
+                              <FiDownload className="w-4 h-4" />
+                              Receipt
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : null}
       </div>
 
       {/* Manual AI Recommendation */}
@@ -306,107 +539,6 @@ export default function PurchaseOrdersPage() {
             Generate Receipt
           </button>
         </div>
-      </div>
-
-      {/* Orders Table */}
-      <div className="card overflow-hidden p-0">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Order ID
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Items
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order) => (
-              <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  #{order.id}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(order.createdAt || order.orderDate).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {order.items?.length || order.purchaseOrderItems?.length || 0} items
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(order.status)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {order.status === 'PENDING' && (
-                      <>
-                        <button
-                          onClick={() => handleApprove(order.id)}
-                          className="text-green-600 hover:text-green-800 flex items-center gap-1"
-                        >
-                          <FiCheck className="w-4 h-4" />
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleGetRecommendation(order.id)}
-                          disabled={loadingRecommendation}
-                          className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
-                        >
-                          Get Recommendation
-                        </button>
-                      </>
-                    )}
-                    {order.status === 'APPROVED' && !order.manufacturerId && (
-                      <button
-                        onClick={() => handleGetRecommendation(order.id)}
-                        disabled={loadingRecommendation}
-                        className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
-                      >
-                        Finalize Manufacturer
-                      </button>
-                    )}
-                    {order.status === 'APPROVED' && order.manufacturerId && (
-                      <button
-                        onClick={() => handleMarkSent(order.id)}
-                        className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                      >
-                        <FiSend className="w-4 h-4" />
-                        Mark Sent
-                      </button>
-                    )}
-                    {order.status === 'SENT' && (
-                      <button
-                        onClick={() => handleMarkReceived(order.id)}
-                        className="text-green-600 hover:text-green-800 flex items-center gap-1"
-                      >
-                        <FiTruck className="w-4 h-4" />
-                        Mark Received
-                      </button>
-                    )}
-                    {order.status !== 'PENDING' && (
-                      <button
-                        onClick={() => handleGenerateReceipt(order.id)}
-                        className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
-                      >
-                        <FiDownload className="w-4 h-4" />
-                        Receipt
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
       {/* Recommendation Modal */}

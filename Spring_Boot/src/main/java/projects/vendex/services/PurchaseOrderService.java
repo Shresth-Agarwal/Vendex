@@ -1,8 +1,12 @@
 package projects.vendex.services;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import projects.vendex.dtos.PurchaseOrderDto;
 import projects.vendex.entities.Manufacturer;
 import projects.vendex.entities.PurchaseOrder;
@@ -12,9 +16,6 @@ import projects.vendex.exceptions.NotFoundException;
 import projects.vendex.mappers.PurchaseOrderMapper;
 import projects.vendex.repositories.ManufacturerRepository;
 import projects.vendex.repositories.PurchaseOrderRepository;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -127,5 +128,17 @@ public class PurchaseOrderService {
         po.setReceivedAt(LocalDateTime.now());
 
         return poRepository.save(po);
+    }
+
+    @Transactional
+    public void delete(Long poId) {
+        PurchaseOrder po = getById(poId);
+
+        // Only allow deletion when still pending approval
+        if (po.getStatus() != PurchaseOrderStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("Only pending purchase orders can be deleted");
+        }
+
+        poRepository.delete(po);
     }
 }
