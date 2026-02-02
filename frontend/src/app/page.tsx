@@ -4,12 +4,31 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
-import { FiShoppingBag, FiPackage, FiTrendingUp, FiArrowRight, FiUsers, FiBarChart } from 'react-icons/fi';
+import { FiShoppingBag, FiPackage, FiTrendingUp, FiArrowRight, FiUsers, FiBarChart, FiMoon, FiSun } from 'react-icons/fi';
 
 export default function Home() {
   const router = useRouter();
   const { isAuthenticated, user, loadUser } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('darkMode', JSON.stringify(newDarkMode));
+    }
+  };
+
+  useEffect(() => {
+    // Load dark mode preference from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('darkMode');
+      if (saved !== null) {
+        setDarkMode(JSON.parse(saved));
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Try to load user from token if available (optional)
@@ -39,19 +58,33 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      <div className={`flex items-center justify-center min-h-screen transition-colors duration-300 ${
+        darkMode
+          ? 'bg-gray-900'
+          : 'bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50'
+      }`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto ${
+            darkMode ? 'border-blue-400' : 'border-blue-600'
+          }`}></div>
+          <p className={`mt-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      darkMode
+        ? 'bg-gray-900'
+        : 'bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50'
+    }`}>
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200">
+      <nav className={`backdrop-blur-md shadow-lg border-b transition-colors duration-300 ${
+        darkMode
+          ? 'bg-gray-800/80 border-gray-700'
+          : 'bg-white/80 border-gray-200'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -62,9 +95,24 @@ export default function Home() {
               </Link>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-lg transition-colors duration-200 ${
+                  darkMode
+                    ? 'hover:bg-gray-700'
+                    : 'hover:bg-gray-100'
+                }`}
+                title={darkMode ? 'Light Mode' : 'Dark Mode'}
+              >
+                {darkMode ? (
+                  <FiSun className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <FiMoon className="w-5 h-5 text-gray-600" />
+                )}
+              </button>
               {isAuthenticated && user ? (
                 <>
-                  <span className="text-sm text-gray-600 font-medium">{user.username}</span>
+                  <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{user.username}</span>
                   <button
                     onClick={handleGetStarted}
                     className="btn-primary text-sm"
@@ -74,7 +122,11 @@ export default function Home() {
                 </>
               ) : (
                 <>
-                  <Link href="/consumer" className="text-sm text-gray-600 hover:text-blue-600 font-medium">
+                  <Link href="/consumer" className={`text-sm font-medium ${
+                    darkMode
+                      ? 'text-gray-400 hover:text-blue-400'
+                      : 'text-gray-600 hover:text-blue-600'
+                  }`}>
                     Browse
                   </Link>
                   <Link href="/login" className="btn-primary text-sm">
@@ -90,11 +142,15 @@ export default function Home() {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center">
-          <h1 className="text-6xl font-bold text-gray-900 mb-6">
+          <h1 className={`text-6xl font-bold mb-6 ${
+            darkMode ? 'text-white' : 'text-gray-900'
+          }`}>
             Smart B2B Platform for
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Modern Commerce</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
+          <p className={`text-xl mb-10 max-w-3xl mx-auto ${
+            darkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
             Connect consumers, store owners, and manufacturers in one intelligent platform.
             Powered by AI-driven inventory management and demand forecasting.
           </p>
@@ -118,47 +174,71 @@ export default function Home() {
       {/* Quick Links */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link href="/consumer" className="card text-center hover:scale-105 transition-transform cursor-pointer">
-            <FiShoppingBag className="w-10 h-10 text-blue-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900">Browse Products</h3>
+          <Link href="/consumer" className={`card text-center hover:scale-105 transition-transform cursor-pointer ${
+            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'
+          }`}>
+            <FiShoppingBag className={`w-10 h-10 mx-auto mb-3 ${
+              darkMode ? 'text-blue-400' : 'text-blue-600'
+            }`} />
+            <h3 className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Browse Products</h3>
           </Link>
-          <Link href="/store-owner" className="card text-center hover:scale-105 transition-transform cursor-pointer">
-            <FiBarChart className="w-10 h-10 text-purple-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900">Store Dashboard</h3>
+          <Link href="/store-owner" className={`card text-center hover:scale-105 transition-transform cursor-pointer ${
+            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'
+          }`}>
+            <FiBarChart className={`w-10 h-10 mx-auto mb-3 ${
+              darkMode ? 'text-purple-400' : 'text-purple-600'
+            }`} />
+            <h3 className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Store Dashboard</h3>
           </Link>
-          <Link href="/manufacturer" className="card text-center hover:scale-105 transition-transform cursor-pointer">
-            <FiPackage className="w-10 h-10 text-blue-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900">Manufacturer</h3>
+          <Link href="/manufacturer" className={`card text-center hover:scale-105 transition-transform cursor-pointer ${
+            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'
+          }`}>
+            <FiPackage className={`w-10 h-10 mx-auto mb-3 ${
+              darkMode ? 'text-blue-400' : 'text-blue-600'
+            }`} />
+            <h3 className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Manufacturer</h3>
           </Link>
-          <Link href="/admin" className="card text-center hover:scale-105 transition-transform cursor-pointer">
-            <FiUsers className="w-10 h-10 text-purple-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-gray-900">Admin</h3>
+          <Link href="/admin" className={`card text-center hover:scale-105 transition-transform cursor-pointer ${
+            darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'
+          }`}>
+            <FiUsers className={`w-10 h-10 mx-auto mb-3 ${
+              darkMode ? 'text-purple-400' : 'text-purple-600'
+            }`} />
+            <h3 className={`font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Admin</h3>
           </Link>
         </div>
       </div>
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">Features</h2>
+        <h2 className={`text-4xl font-bold text-center mb-12 ${
+          darkMode ? 'text-white' : 'text-gray-900'
+        }`}>Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="card text-center">
-            <FiShoppingBag className="w-14 h-14 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-3 text-gray-900">Smart Shopping</h3>
-            <p className="text-gray-600">
+          <div className={`card text-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}`}>
+            <FiShoppingBag className={`w-14 h-14 mx-auto mb-4 ${
+              darkMode ? 'text-blue-400' : 'text-blue-600'
+            }`} />
+            <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Smart Shopping</h3>
+            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               AI-powered intent builder helps you find exactly what you need with natural language queries.
             </p>
           </div>
-          <div className="card text-center">
-            <FiPackage className="w-14 h-14 text-purple-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-3 text-gray-900">Inventory Management</h3>
-            <p className="text-gray-600">
+          <div className={`card text-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}`}>
+            <FiPackage className={`w-14 h-14 mx-auto mb-4 ${
+              darkMode ? 'text-purple-400' : 'text-purple-600'
+            }`} />
+            <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Inventory Management</h3>
+            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Real-time inventory tracking with AI demand forecasting to optimize stock levels.
             </p>
           </div>
-          <div className="card text-center">
-            <FiTrendingUp className="w-14 h-14 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-3 text-gray-900">Analytics & Insights</h3>
-            <p className="text-gray-600">
+          <div className={`card text-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}`}>
+            <FiTrendingUp className={`w-14 h-14 mx-auto mb-4 ${
+              darkMode ? 'text-blue-400' : 'text-blue-600'
+            }`} />
+            <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Analytics & Insights</h3>
+            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
               Comprehensive analytics and AI-powered recommendations for better business decisions.
             </p>
           </div>
@@ -166,7 +246,11 @@ export default function Home() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20 rounded-2xl mx-4 mb-20">
+      <div className={`text-white py-20 rounded-2xl mx-4 mb-20 transition-colors duration-300 ${
+        darkMode
+          ? 'bg-gradient-to-r from-blue-700 to-purple-700'
+          : 'bg-gradient-to-r from-blue-600 to-purple-600'
+      }`}>
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold mb-4">Ready to get started?</h2>
           <p className="text-xl mb-8 opacity-90">
@@ -186,7 +270,9 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className={`text-white py-12 transition-colors duration-300 ${
+        darkMode ? 'bg-gray-950' : 'bg-gray-900'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>

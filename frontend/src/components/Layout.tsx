@@ -18,6 +18,8 @@ import {
   FiTrendingUp,
   FiSettings,
   FiChevronDown,
+  FiMoon,
+  FiSun,
 } from 'react-icons/fi';
 
 interface LayoutProps {
@@ -93,12 +95,31 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [globalSuccess, setGlobalSuccess] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('darkMode', JSON.stringify(newDarkMode));
+    }
+  };
 
   const toggleDropdown = (category: string) => {
     setOpenDropdown(openDropdown === category ? null : category);
   };
 
   const isDropdownOpen = (category: string) => openDropdown === category;
+
+  useEffect(() => {
+    // Load dark mode preference from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('darkMode');
+      if (saved !== null) {
+        setDarkMode(JSON.parse(saved));
+      }
+    }
+  }, []);
 
   useEffect(() => {
     function onAppError(e: Event) {
@@ -137,8 +158,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const groupedRoutes = getGroupedRoutes(visibleRoutes);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
-      <nav className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200 sticky top-0 z-50">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      darkMode 
+        ? 'bg-gray-900' 
+        : 'bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50'
+    }`}>
+      <nav className={`backdrop-blur-md shadow-lg sticky top-0 z-50 transition-colors duration-300 ${
+        darkMode
+          ? 'bg-gray-800/80 border-b border-gray-700'
+          : 'bg-white/80 border-b border-gray-200'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -158,6 +187,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         isDropdownOpen(group.name) || group.routes.some(r => pathname === r.path || pathname.startsWith(r.path + '/'))
                           ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
+                          : darkMode
+                          ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
                           : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
                       }`}
                     >
@@ -168,7 +199,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                     {/* Dropdown Menu */}
                     {isDropdownOpen(group.name) && (
-                      <div className="absolute left-0 mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+                      <div className={`absolute left-0 mt-1 w-56 rounded-lg shadow-xl z-50 transition-colors duration-200 ${
+                        darkMode
+                          ? 'bg-gray-800 border border-gray-700'
+                          : 'bg-white border border-gray-200'
+                      }`}>
                         <div className="py-2">
                           {group.routes.map((route) => {
                             const isActive = pathname === route.path || pathname.startsWith(route.path + '/');
@@ -179,7 +214,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                                 onClick={() => setOpenDropdown(null)}
                                 className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                                   isActive
-                                    ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 border-l-4 border-blue-600'
+                                    ? darkMode
+                                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-l-4 border-blue-400'
+                                      : 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 border-l-4 border-blue-600'
+                                    : darkMode
+                                    ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
                                     : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
                                 }`}
                               >
@@ -196,18 +235,41 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={toggleDarkMode}
+                className={`p-2 rounded-lg transition-colors duration-200 ${
+                  darkMode
+                    ? 'hover:bg-gray-700'
+                    : 'hover:bg-gray-100'
+                }`}
+                title={darkMode ? 'Light Mode' : 'Dark Mode'}
+              >
+                {darkMode ? (
+                  <FiSun className="w-5 h-5 text-yellow-500" />
+                ) : (
+                  <FiMoon className="w-5 h-5 text-gray-600" />
+                )}
+              </button>
               {isAuthenticated && user ? (
                 <>
                   <div className="flex items-center gap-2 text-sm">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200">
-                      <FiUser className="w-4 h-4 text-blue-600" />
-                      <span className="font-medium text-gray-700">{user.username}</span>
-                      <span className="badge badge-info text-xs">{user.role}</span>
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors duration-200 ${
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600'
+                        : 'bg-blue-50 border-blue-200'
+                    }`}>
+                      <FiUser className={`w-4 h-4 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                      <span className={`font-medium ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>{user.username}</span>
+                      <span className={`badge badge-info text-xs ${darkMode ? 'bg-blue-600 text-white' : ''}`}>{user.role}</span>
                     </div>
                   </div>
                   <button
                     onClick={logout}
-                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                    className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg transition-colors ${
+                      darkMode
+                        ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/20'
+                        : 'text-gray-600 hover:text-red-600 hover:bg-red-50'
+                    }`}
                   >
                     <FiLogOut className="w-4 h-4" />
                     <span className="hidden sm:inline">Logout</span>
@@ -227,7 +289,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
         
         {/* Mobile Navigation with Categories */}
-        <div className="lg:hidden border-t border-gray-200 bg-white max-h-96 overflow-y-auto">
+        <div className={`lg:hidden max-h-96 overflow-y-auto transition-colors duration-300 ${
+          darkMode
+            ? 'border-t border-gray-700 bg-gray-800'
+            : 'border-t border-gray-200 bg-white'
+        }`}>
           <div className="px-4 py-2 space-y-1">
             {groupedRoutes.map((group) => (
               <div key={group.name}>
@@ -237,6 +303,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     isDropdownOpen(group.name) || group.routes.some(r => pathname === r.path || pathname.startsWith(r.path + '/'))
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                      : darkMode
+                      ? 'text-gray-300 bg-gray-700 hover:bg-gray-600'
                       : 'text-gray-700 bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
@@ -260,6 +328,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                             isActive
                               ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 border-l-2 border-blue-600'
+                              : darkMode
+                              ? 'text-gray-400 hover:bg-gray-700'
                               : 'text-gray-700 hover:bg-gray-100'
                           }`}
                         >
@@ -277,11 +347,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </nav>
       {globalError && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+            darkMode
+              ? 'bg-red-900/30 border-red-700'
+              : 'bg-red-50 border-red-200'
+          }`}>
             <div className="flex justify-between items-start gap-4">
-              <p className="text-red-800 text-sm">{globalError}</p>
+              <p className={`text-sm ${darkMode ? 'text-red-300' : 'text-red-800'}`}>{globalError}</p>
               <button
-                className="text-red-600 text-sm hover:text-red-800"
+                className={`text-sm transition-colors ${
+                  darkMode
+                    ? 'text-red-400 hover:text-red-300'
+                    : 'text-red-600 hover:text-red-800'
+                }`}
                 onClick={() => setGlobalError(null)}
               >
                 Dismiss
@@ -293,11 +371,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {globalSuccess && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className={`border rounded-lg p-3 transition-colors duration-300 ${
+            darkMode
+              ? 'bg-green-900/30 border-green-700'
+              : 'bg-green-50 border-green-200'
+          }`}>
             <div className="flex justify-between items-start gap-4">
-              <p className="text-green-800 text-sm">{globalSuccess}</p>
+              <p className={`text-sm ${darkMode ? 'text-green-300' : 'text-green-800'}`}>{globalSuccess}</p>
               <button
-                className="text-green-600 text-sm hover:text-green-800"
+                className={`text-sm transition-colors ${
+                  darkMode
+                    ? 'text-green-400 hover:text-green-300'
+                    : 'text-green-600 hover:text-green-800'
+                }`}
                 onClick={() => setGlobalSuccess(null)}
               >
                 Dismiss
@@ -306,7 +392,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       )}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-colors duration-300 ${
+        darkMode ? 'text-gray-100' : 'text-gray-900'
+      }`}>
         {children}
       </main>
     </div>
