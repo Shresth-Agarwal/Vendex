@@ -20,6 +20,8 @@ export default function InventoryPage() {
   const [recommendedManufacturer, setRecommendedManufacturer] = useState<any>(null);
   const [loadingRecommendation, setLoadingRecommendation] = useState(false);
   const [forecasts, setForecasts] = useState<Map<string, any>>(new Map());
+  const [allForecasts, setAllForecasts] = useState<any[]>([]);
+  const [loadingAllForecasts, setLoadingAllForecasts] = useState(false);
   const [manualSku, setManualSku] = useState('');
   const [manualForecast, setManualForecast] = useState<any>(null);
   const [loadingManualForecast, setLoadingManualForecast] = useState(false);
@@ -50,6 +52,19 @@ export default function InventoryPage() {
   useEffect(() => {
     loadInventory();
   }, [isAuthenticated, user]);
+
+  const loadAllProductForecasts = async () => {
+    setLoadingAllForecasts(true);
+    try {
+      const forecastsData = await inventoryAgentApi.bulkForecastAndDecide();
+      setAllForecasts(Array.isArray(forecastsData) ? forecastsData : forecastsData.forecasts || []);
+    } catch (error: any) {
+      console.warn('Error loading all product forecasts:', error);
+      setAllForecasts([]);
+    } finally {
+      setLoadingAllForecasts(false);
+    }
+  };
 
   const loadInventory = async () => {
     setError(null);
@@ -97,6 +112,9 @@ export default function InventoryPage() {
       }
       
       setForecasts(forecastMap);
+
+      // Load forecasts for all products
+      await loadAllProductForecasts();
     } catch (error: any) {
       console.error('Error loading inventory:', error);
       setError(error?.message || 'Failed to load inventory. Please try again.');
@@ -392,6 +410,81 @@ export default function InventoryPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* All Products Forecast Section */}
+      <div className="card bg-gradient-to-r from-green-50 to-blue-50">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <FiPackage className="w-6 h-6 text-green-600" />
+            <h2 className="text-xl font-bold">All Products Forecast</h2>
+          </div>
+          <button
+            onClick={loadAllProductForecasts}
+            disabled={loadingAllForecasts}
+            className="btn-secondary flex items-center gap-2 text-sm"
+          >
+            <FiRefreshCw className={`w-4 h-4 ${loadingAllForecasts ? 'animate-spin' : ''}`} />
+            {loadingAllForecasts ? 'Loading...' : 'Load Forecasts'}
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          View AI-generated forecasts and recommendations for all products in your inventory.
+        </p>
+        {loadingAllForecasts ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <p className="text-gray-600 mt-2">Loading forecasts for all products...</p>
+          </div>
+        ) : allForecasts.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left p-2 font-semibold">SKU</th>
+                  <th className="text-left p-2 font-semibold">Product Name</th>
+                  <th className="text-right p-2 font-semibold">Current Stock</th>
+                  <th className="text-right p-2 font-semibold">Forecast</th>
+                  <th className="text-right p-2 font-semibold">Recommended Order</th>
+                  <th className="text-right p-2 font-semibold">Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allForecasts.map((forecast: any, index: number) => {
+                  const item = inventory.find((i) => i.sku === forecast.sku);
+                  return (
+                    <tr key={index} className="border-b border-gray-100 hover:bg-white/50">
+                      <td className="p-2 font-mono text-xs">{forecast.sku}</td>
+                      <td className="p-2">{item?.productName || item?.name || 'N/A'}</td>
+                      <td className="text-right p-2">{item?.onHand || 0}</td>
+                      <td className="text-right p-2 text-blue-600 font-semibold">
+                        {Math.round(forecast.forecast?.demand_forecast || 0)}
+                      </td>
+                      <td className="text-right p-2 text-green-600 font-semibold">
+                        {Math.round(forecast.decision?.recommended_order_quantity || 0)}
+                      </td>
+                      <td className="text-right p-2">
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                          (forecast.forecast?.confidence || 0) > 0.7
+                            ? 'bg-green-100 text-green-800'
+                            : (forecast.forecast?.confidence || 0) > 0.5
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {((forecast.forecast?.confidence || 0) * 100).toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-600">
+            <p>No forecasts available. Click "Load Forecasts" to generate predictions.</p>
           </div>
         )}
       </div>

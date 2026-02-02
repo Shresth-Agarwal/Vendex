@@ -101,9 +101,23 @@ public class InventoryAgentService {
         List<Product> products = productRepository.findAll();
         List<ForecastAndDecisionResponseDto> responses = new ArrayList<>();
 
-        for (Product product : products) {
-            responses.add(forecastAndDecide(product.getSku()));
-        }
+                for (Product product : products) {
+                        try {
+                                responses.add(forecastAndDecide(product.getSku()));
+                        } catch (IllegalStateException e) {
+                                // Skip products with insufficient data
+                                if (e.getMessage().contains("Insufficient sales data")) {
+                                        System.out.println("Skipping SKU " + product.getSku() + ": " + e.getMessage());
+                                        continue;
+                                }
+                                // Re-throw other IllegalStateExceptions
+                                throw e;
+                        } catch (Exception e) {
+                                // Log and skip other unexpected errors
+                                System.err.println("Error processing SKU " + product.getSku() + ": " + e.getMessage());
+                                continue;
+                        }
+                }
 
         return responses;
     }
