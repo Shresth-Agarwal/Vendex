@@ -1,16 +1,62 @@
+## Python / general
+# Virtual envs
 venv/
-.vscode/
-*.pyc
-.DS_Store
-.env
-.idea/
-*.log
+.venv/
+env/
+ENV/
+
+# Byte-compiled / caches
 __pycache__/
-Scripts/
-Include/
-Lib/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.pyre/
+
+# Python packaging
 build/
-pyvenv.cfg
-frontend/node_modules/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# VSCode
+.vscode/
+
+# JetBrains
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+
+# env files
 .env
+.env.*
+
+# logs
+*.log
+logs/
+
+# frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.vercel/
+frontend/.cache/
+
+# receipts / generated files
 receipts/
+
+# local python/venv contents often present in project
+python/Include/
+python/Lib/
+python/Scripts/
+python/pyvenv.cfg
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Other
+Thumbs.db
+ehthumbs.db
+desktop.ini

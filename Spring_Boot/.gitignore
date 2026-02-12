@@ -40,3 +40,28 @@ nbdist/
 HELP.md
 application.properties
 application-dev.properties
+ 
+# IntelliJ / Eclipse / general IDE
+.idea/
+*.iml
+.classpath
+.project
+
+# Logs
+*.log
+logs/
+
+# JARs, packaged artifacts
+*.jar
+*.war
+*.ear
+
+# Eclipse/STS specific
+.settings/
+
+# Spring boot specific
+spring-boot-*.jar
+
+# Temporary files
+*.tmp
+*.bak
