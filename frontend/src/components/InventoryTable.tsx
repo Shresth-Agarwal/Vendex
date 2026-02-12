@@ -77,58 +77,58 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
     <div className="card overflow-hidden p-0">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b">
+          <thead className="bg-gray-100 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Product
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 SKU
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                 Stock
               </th>
               {onSelectItem && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Select Qty
                 </th>
               )}
               {showForecast && (
                 <>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Forecast
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                     Reorder Qty
                   </th>
                 </>
               )}
               {showActions && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
               )}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {items.map((item) => {
               const status = getStockStatus(item.onHand);
               const isEditing = editingSku === item.sku;
               const isLoading = loading === item.sku;
 
               return (
-                <tr key={item.sku} className="hover:bg-gray-50">
+                <tr key={item.sku} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {item.productName}
                       </div>
                       {item.category && (
-                        <div className="text-sm text-gray-500">{item.category}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{item.category}</div>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 font-mono">
                     {item.sku}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -144,20 +144,20 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                         <button
                           onClick={() => handleSave(item.sku)}
                           disabled={isLoading}
-                          className="text-green-600 hover:text-green-800"
+                          className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
                         >
                           <FiSave className="w-5 h-5" />
                         </button>
                         <button
                           onClick={handleCancel}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                         >
                           <FiX className="w-5 h-5" />
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {item.onHand}
                         </span>
                         <span className={status.badge}>{status.label}</span>
@@ -186,22 +186,22 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                         {item.demandForecast !== undefined ? (
                           <div className="flex items-center gap-1 text-sm">
                             <FiTrendingUp className="w-4 h-4 text-green-500" />
-                            <span className="font-medium">{item.demandForecast.toFixed(0)}</span>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">{item.demandForecast.toFixed(0)}</span>
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-400">-</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {item.reorderQuantity !== undefined ? (
                           <div className="flex items-center gap-1 text-sm">
                             <FiPackage className="w-4 h-4 text-blue-500" />
-                            <span className="font-medium text-blue-600">
+                            <span className="font-medium text-blue-700 dark:text-blue-400">
                               {item.reorderQuantity}
                             </span>
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-400">-</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
                         )}
                       </td>
                     </>
@@ -210,7 +210,7 @@ export const InventoryTable: React.FC<InventoryTableProps> = ({
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => handleEdit(item)}
-                        className="text-primary-600 hover:text-primary-800 flex items-center gap-1"
+                        className="text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 flex items-center gap-1"
                       >
                         <FiEdit2 className="w-4 h-4" />
                         Edit
