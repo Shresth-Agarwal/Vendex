@@ -1,37 +1,88 @@
 # Vendex – AI-Powered B2B Supply Chain Platform
 
-Vendex is an intelligent B2B platform that connects store owners, consumers, and manufacturers.
-It enables smart inventory management, demand forecasting, intent-based shopping, and real-time stock updates using AI.
+![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green)
+![Python](https://img.shields.io/badge/Python-3.10-blue)
+![MySQL](https://img.shields.io/badge/Database-MySQL-orange)
+![AI](https://img.shields.io/badge/AI-Driven-purple)
+![PowerBI](https://img.shields.io/badge/Analytics-PowerBI-yellow)
 
-## 🚀 Features
 
-### 👤 Consumer
+Vendex is an AI-powered B2B supply chain optimization platform that connects store owners, consumers, and manufacturers into a unified smart ecosystem.  
+It enables real-time inventory tracking, demand forecasting, intelligent reorder recommendations, and intent-based product discovery using data-driven AI models.
 
-* Check real-time product availability
-* Intent-based shopping (type what you need, get all required products)
+
+## 🚀 Core Capabilities
+
+### 👤 Consumer Experience
+- Real-time product availability tracking
+- Intent-based shopping (natural language input → structured product suggestions)
+- Smart product recommendations
 
 ### 🏪 Store Owners
 
-* Demand forecasting using AI
-* Optimal reorder quantity suggestions
-* Real-time stock tracking with auto-updates after sales/purchases
-* Staff management (roles, shifts, responsibilities)
-* Connect with manufacturers and get recommendations
-* Downloadable receipts for transactions
+- AI-based demand forecasting using historical sales data
+- Optimal reorder quantity recommendations
+- Real-time inventory auto-update after transactions
+- Staff management (roles, responsibilities, tracking)
+- Direct manufacturer connectivity
+- Automated receipt generation & downloadable invoices
 
-### 📊 Analytics
+### 📊 Analytics & Insights
 
-* Visual dashboards & reports (Power BI integration)
+- Power BI dashboard integration
+- Sales trend visualization
+- Inventory turnover insights
+- Demand prediction reports
+- Business performance metrics
+
+---
+
+## 🏗 System Architecture
+Frontend (Consumer / Store Owner Interface)
+↓
+FastAPI Backend (Business Logic + ML Models)
+↓
+MySQL Database (Inventory & Orders)
+↓
+Power BI (Analytics Layer)
 
 ---
 
 ## 🛠️ Tech Stack
 
-* Backend: **Python (FastAPI)**
-* ML & Data: **Pandas, NumPy**
-* Database: **MySQL**
-* Frontend: AI-generated / Web UI
-* Analytics: **Power BI**
+### Backend
+- FastAPI (Python)
+- RESTful APIs
+- Uvicorn Server
+
+### AI / ML Layer
+- Google Gemini API (LLM integration)
+- Pandas
+- NumPy
+- Scikit-learn
+- Time-series forecasting techniques
+
+### Database
+- MySQL
+- Relational schema with inventory & orders
+
+### Analytics
+- Microsoft Power BI 
+
+### Frontend
+- Web UI (AI-generated)
+
+---
+
+## 🏗 System Architecture
+
+Consumer / Store Owner (Frontend)
+⬇
+FastAPI Backend (Business Logic + ML Models)
+⬇
+MySQL Database
+⬇
+Power BI (Analytics Layer)
 
 ---
 
@@ -105,12 +156,36 @@ http://127.0.0.1:8000/docs
 ## 📂 Project Structure
 
 ```
+## 📂 Project Structure
+
 Vendex/
- └── python/
-     ├── main.py        # FastAPI entry point
-     ├── routers.py     # API routes
-     ├── demand.py      # Demand forecasting logic
-     └── ...
+│
+├── frontend/                 # Frontend application (Next.js / React)
+│   ├── node_modules/
+│   ├── public/
+│   ├── src/
+│   └── package.json
+│
+├── python/                   # FastAPI Backend
+│   ├── __pycache__/
+│   ├── pydantic_classes/     # Request/Response schemas
+│   ├── venv/                 # Virtual environment
+│   ├── assign.py             # Assignment logic
+│   ├── decision.py           # Decision-making logic
+│   ├── demand.py             # Demand forecasting (ML)
+│   ├── intent.py             # Intent processing (Gemini integration)
+│   ├── main.py               # FastAPI entry point
+│   ├── receipt.py            # Receipt generation logic
+│   ├── recommender.py        # Recommendation engine
+│   ├── routers.py            # API route definitions
+│   └── requirements.txt
+│
+├── Spring_Boot/              # (Optional / Legacy backend module)
+│
+├── .gitignore
+├── README.md
+└── requirements.txt
+
 ```
 
 ---
