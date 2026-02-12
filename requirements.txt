@@ -1,6 +1,0 @@
-openai
-fastapi[standard]
-pydantic
-uvicorn
-python-dotenv
-fpdf2

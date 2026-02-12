@@ -1,14 +1,9 @@
 import json
-from openai import AzureOpenAI
 import os
 from dotenv import load_dotenv
-load_dotenv()
+from .ai_config import ai_chat
 
-client = AzureOpenAI(
-    azure_endpoint=os.getenv("AZURE_ENDPOINT"), 
-    api_key=os.getenv("AZURE_API_KEY"),  
-    api_version="2024-12-01-preview"
-)
+load_dotenv()
 
 SYSTEM_PROMPT = """
 You are the Vendex Intelligent Retail Engine. Your goal is to convert human intent into actionable retail "bundles" using the provided stock list.
@@ -43,23 +38,25 @@ OUTPUT FORMAT (Strict JSON):
 }
 """
 
+
 def vendex_intelligent_agent(user_query, current_stock_list):
     formatted_system_prompt = SYSTEM_PROMPT.replace("[[STOCK_JSON]]", json.dumps(current_stock_list))
 
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": formatted_system_prompt},
-                {"role": "user", "content": user_query}
-            ],
-            response_format={ "type": "json_object" },
-            temperature=0.2 
-        )
+        content = ai_chat([
+            {"role": "system", "content": formatted_system_prompt},
+            {"role": "user", "content": user_query}
+        ], temperature=0.2)
+
+        # Extract JSON from response (handle markdown code blocks)
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+        content = content.strip()
         
-        # Load the AI response into a Python dictionary
-        return json.loads(response.choices[0].message.content)
+        return json.loads(content)
     except Exception as e:
-        # If Azure fails, this will catch it
-        print(f"Azure OpenAI Error: {e}")
+        print(f"AI Error: {e}")
         raise e
