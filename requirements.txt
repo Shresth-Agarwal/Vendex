@@ -1,9 +1,0 @@
-openai
-fastapi[standard]
-pydantic
-uvicorn
-python-dotenv
-fpdf2
-pandas
-scikit-learn
-numpy
