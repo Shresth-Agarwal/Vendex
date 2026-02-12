@@ -20,6 +20,8 @@ export default function InventoryPage() {
   const [recommendedManufacturer, setRecommendedManufacturer] = useState<any>(null);
   const [loadingRecommendation, setLoadingRecommendation] = useState(false);
   const [forecasts, setForecasts] = useState<Map<string, any>>(new Map());
+  const [allForecasts, setAllForecasts] = useState<any[]>([]);
+  const [loadingAllForecasts, setLoadingAllForecasts] = useState(false);
   const [manualSku, setManualSku] = useState('');
   const [manualForecast, setManualForecast] = useState<any>(null);
   const [loadingManualForecast, setLoadingManualForecast] = useState(false);
@@ -50,6 +52,19 @@ export default function InventoryPage() {
   useEffect(() => {
     loadInventory();
   }, [isAuthenticated, user]);
+
+  const loadAllProductForecasts = async () => {
+    setLoadingAllForecasts(true);
+    try {
+      const forecastsData = await inventoryAgentApi.bulkForecastAndDecide();
+      setAllForecasts(Array.isArray(forecastsData) ? forecastsData : forecastsData.forecasts || []);
+    } catch (error: any) {
+      console.warn('Error loading all product forecasts:', error);
+      setAllForecasts([]);
+    } finally {
+      setLoadingAllForecasts(false);
+    }
+  };
 
   const loadInventory = async () => {
     setError(null);
@@ -97,6 +112,9 @@ export default function InventoryPage() {
       }
       
       setForecasts(forecastMap);
+
+      // Load forecasts for all products
+      await loadAllProductForecasts();
     } catch (error: any) {
       console.error('Error loading inventory:', error);
       setError(error?.message || 'Failed to load inventory. Please try again.');
@@ -325,7 +343,7 @@ export default function InventoryPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-300">Loading...</p>
         </div>
       </div>
     );
@@ -334,11 +352,11 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-4">
+          <p className="text-red-800 dark:text-red-200">{error}</p>
           <button
             onClick={() => setError(null)}
-            className="mt-2 text-sm text-red-600 hover:text-red-800"
+            className="mt-2 text-sm text-red-600 dark:text-red-300 hover:text-red-800 dark:hover:text-red-200"
           >
             Dismiss
           </button>
@@ -346,7 +364,7 @@ export default function InventoryPage() {
       )}
       
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Inventory Management</h1>
         <div className="flex gap-2">
           <button onClick={loadInventory} className="btn-secondary flex items-center gap-2">
             <FiRefreshCw className="w-4 h-4" />
@@ -364,12 +382,12 @@ export default function InventoryPage() {
       </div>
 
       {/* Demand Forecast Section */}
-      <div className="card bg-gradient-to-r from-blue-50 to-purple-50">
+      <div className="card bg-gradient-to-r from-blue-50 dark:from-blue-900/20 to-purple-50 dark:to-purple-900/20">
         <div className="flex items-center gap-2 mb-4">
           <FiTrendingUp className="w-6 h-6 text-primary-600" />
-          <h2 className="text-xl font-bold">AI Demand Forecast</h2>
+          <h2 className="text-xl font-bold dark:text-gray-100">AI Demand Forecast</h2>
         </div>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           AI-powered demand predictions help you optimize inventory levels and reduce stockouts.
         </p>
         {forecasts.size > 0 && (
@@ -377,15 +395,15 @@ export default function InventoryPage() {
             {Array.from(forecasts.entries()).map(([sku, forecast]) => {
               const item = inventory.find((i) => i.sku === sku);
               return (
-                <div key={sku} className="bg-white p-4 rounded-lg border">
-                  <p className="font-semibold">{item?.productName || sku}</p>
+                <div key={sku} className="bg-white dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <p className="font-semibold dark:text-gray-100">{item?.productName || sku}</p>
                   {forecast.forecast && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
                       Forecast: {forecast.forecast.demand_forecast || 'N/A'}
                     </p>
                   )}
                   {forecast.decision && (
-                    <p className="text-sm text-primary-600">
+                    <p className="text-sm text-primary-600 dark:text-primary-400">
                       Recommended Order: {forecast.decision.recommended_order_quantity || 0}
                     </p>
                   )}
@@ -396,13 +414,88 @@ export default function InventoryPage() {
         )}
       </div>
 
+      {/* All Products Forecast Section */}
+      <div className="card bg-gradient-to-r from-green-50 to-blue-50">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <FiPackage className="w-6 h-6 text-green-600" />
+            <h2 className="text-xl font-bold">All Products Forecast</h2>
+          </div>
+          <button
+            onClick={loadAllProductForecasts}
+            disabled={loadingAllForecasts}
+            className="btn-secondary flex items-center gap-2 text-sm"
+          >
+            <FiRefreshCw className={`w-4 h-4 ${loadingAllForecasts ? 'animate-spin' : ''}`} />
+            {loadingAllForecasts ? 'Loading...' : 'Load Forecasts'}
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">
+          View AI-generated forecasts and recommendations for all products in your inventory.
+        </p>
+        {loadingAllForecasts ? (
+          <div className="text-center py-8">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            <p className="text-gray-600 mt-2">Loading forecasts for all products...</p>
+          </div>
+        ) : allForecasts.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left p-2 font-semibold">SKU</th>
+                  <th className="text-left p-2 font-semibold">Product Name</th>
+                  <th className="text-right p-2 font-semibold">Current Stock</th>
+                  <th className="text-right p-2 font-semibold">Forecast</th>
+                  <th className="text-right p-2 font-semibold">Recommended Order</th>
+                  <th className="text-right p-2 font-semibold">Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allForecasts.map((forecast: any, index: number) => {
+                  const item = inventory.find((i) => i.sku === forecast.sku);
+                  return (
+                    <tr key={index} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                      <td className="p-2 font-mono text-xs dark:text-gray-200">{forecast.sku}</td>
+                      <td className="p-2 dark:text-gray-200">{item?.productName || item?.name || 'N/A'}</td>
+                      <td className="text-right p-2 dark:text-gray-200">{item?.onHand || 0}</td>
+                      <td className="text-right p-2 text-blue-600 dark:text-blue-400 font-semibold">
+                        {Math.round(forecast.forecast?.demand_forecast || 0)}
+                      </td>
+                      <td className="text-right p-2 text-green-600 dark:text-green-400 font-semibold">
+                        {Math.round(forecast.decision?.recommended_order_quantity || 0)}
+                      </td>
+                      <td className="text-right p-2">
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                          (forecast.forecast?.confidence || 0) > 0.7
+                            ? 'bg-green-100 text-green-800'
+                            : (forecast.forecast?.confidence || 0) > 0.5
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {((forecast.forecast?.confidence || 0) * 100).toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-600 dark:text-gray-300">
+            <p>No forecasts available. Click "Load Forecasts" to generate predictions.</p>
+          </div>
+        )}
+      </div>
+
       {/* Manual Forecast Input */}
       <div className="card">
         <div className="flex items-center gap-2 mb-4">
           <FiTrendingUp className="w-6 h-6 text-primary-600" />
-          <h2 className="text-xl font-bold">Manual Forecast</h2>
+          <h2 className="text-xl font-bold dark:text-gray-100">Manual Forecast</h2>
         </div>
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           Enter a SKU to get AI-powered demand forecast and inventory decision.
         </p>
         <div className="flex gap-2 mb-4">
@@ -428,8 +521,8 @@ export default function InventoryPage() {
         </div>
         
         {manualForecast && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <h3 className="font-semibold text-green-800 mb-2">Forecast for {manualForecast.sku}</h3>
+          <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4">
+            <h3 className="font-semibold text-green-800 dark:text-green-300 mb-2">Forecast for {manualForecast.sku}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="font-medium">Forecast:</span> {manualForecast.forecast.forecast?.toFixed(1)} units
@@ -450,16 +543,16 @@ export default function InventoryPage() {
 
       {/* Direct FastAPI Endpoints */}
       <div className="card">
-        <h2 className="text-xl font-bold mb-4">Direct FastAPI Endpoints</h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <h2 className="text-xl font-bold mb-4 dark:text-gray-100">Direct FastAPI Endpoints</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
           Test FastAPI endpoints directly with your own input data.
         </p>
         
         <div className="space-y-6">
           {/* Forecast Endpoint */}
-          <div className="border rounded-lg p-4">
-            <h3 className="font-semibold mb-2">1. Forecast Endpoint</h3>
-            <p className="text-sm text-gray-600 mb-2">Enter sales history as comma-separated numbers (e.g., 10, 15, 12, 18, 20)</p>
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 className="font-semibold mb-2 dark:text-gray-100">1. Forecast Endpoint</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Enter sales history as comma-separated numbers (e.g., 10, 15, 12, 18, 20)</p>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -481,16 +574,16 @@ export default function InventoryPage() {
               </button>
             </div>
             {directForecastResult && (
-              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
-                <pre className="text-sm overflow-auto">{JSON.stringify(directForecastResult, null, 2)}</pre>
+              <div className="mt-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                <pre className="text-sm overflow-auto dark:text-gray-200">{JSON.stringify(directForecastResult, null, 2)}</pre>
               </div>
             )}
           </div>
 
           {/* Decision Endpoint */}
-          <div className="border rounded-lg p-4">
-            <h3 className="font-semibold mb-2">2. Decision Endpoint</h3>
-            <p className="text-sm text-gray-600 mb-2">Enter forecast, confidence, current stock, and unit cost</p>
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 className="font-semibold mb-2 dark:text-gray-100">2. Decision Endpoint</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Enter forecast, confidence, current stock, and unit cost</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2">
               <input
                 type="number"
@@ -531,16 +624,16 @@ export default function InventoryPage() {
               {loadingDirectDecision ? 'Loading...' : 'Get Decision'}
             </button>
             {directDecisionResult && (
-              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
-                <pre className="text-sm overflow-auto">{JSON.stringify(directDecisionResult, null, 2)}</pre>
+              <div className="mt-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4">
+                <pre className="text-sm overflow-auto dark:text-gray-200">{JSON.stringify(directDecisionResult, null, 2)}</pre>
               </div>
             )}
           </div>
 
           {/* Forecast and Decide Endpoint */}
-          <div className="border rounded-lg p-4">
-            <h3 className="font-semibold mb-2">3. Forecast and Decide Endpoint</h3>
-            <p className="text-sm text-gray-600 mb-2">Enter sales history, current stock, and unit cost</p>
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 className="font-semibold mb-2 dark:text-gray-100">3. Forecast and Decide Endpoint</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Enter sales history, current stock, and unit cost</p>
             <div className="space-y-2 mb-2">
               <input
                 type="text"

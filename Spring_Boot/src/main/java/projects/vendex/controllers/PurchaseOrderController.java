@@ -1,12 +1,15 @@
 package projects.vendex.controllers;
 
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.web.bind.annotation.*;
+
+import lombok.RequiredArgsConstructor;
 import projects.vendex.dtos.PurchaseOrderDto;
+import projects.vendex.entities.PurchaseOrderItem;
 import projects.vendex.mappers.PurchaseOrderMapper;
 import projects.vendex.services.PurchaseOrderService;
-
-import java.util.List;
 @RestController
 @RequestMapping("demo/manager/purchase-orders")
 // @PreAuthorize("hasRole('ADMIN')")
@@ -52,5 +55,29 @@ public class PurchaseOrderController {
     @PutMapping("/{id}/received")
     public PurchaseOrderDto markReceived(@PathVariable Long id) {
         return mapper.toDto(service.markReceived(id));
+    }
+
+    // Create PO (accepts PurchaseOrderDto with items and optional confidence)
+    @PostMapping
+    public PurchaseOrderDto create(@RequestBody PurchaseOrderDto dto) {
+        List<PurchaseOrderItem> items = dto.getItems() == null ? List.of() : dto.getItems()
+                .stream()
+                .map(i -> {
+                    PurchaseOrderItem it = new PurchaseOrderItem();
+                    it.setSku(i.getSku());
+                    it.setQuantity(i.getQuantity());
+                    return it;
+                })
+                .collect(Collectors.toList());
+
+        Double confidence = dto.getConfidence() == null ? 0.0 : dto.getConfidence();
+
+        return mapper.toDto(service.createFromDecision(items, confidence));
+    }
+
+    // Delete PO
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        service.delete(id);
     }
 }

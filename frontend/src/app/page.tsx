@@ -209,38 +209,158 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Features Section */}
+      {/* Features Overview Section */}
+      <div className={`py-20 transition-colors duration-300 ${
+        darkMode ? 'bg-gray-800' : 'bg-gray-50'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className={`text-4xl font-bold text-center mb-4 ${
+            darkMode ? 'text-white' : 'text-gray-900'
+          }`}>Key Features</h2>
+          <p className={`text-center mb-12 max-w-3xl mx-auto text-lg ${
+            darkMode ? 'text-gray-400' : 'text-gray-600'
+          }`}>
+            Vendex combines intelligent AI technology with intuitive design to streamline your B2B operations. 
+            From smart shopping experiences to real-time inventory management and comprehensive analytics, 
+            we provide everything you need to succeed.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className={`flex items-start gap-4 p-6 rounded-lg transition-colors ${
+              darkMode ? 'bg-gray-700' : 'bg-white'
+            }`}>
+              <FiShoppingBag className={`w-8 h-8 flex-shrink-0 ${
+                darkMode ? 'text-blue-400' : 'text-blue-600'
+              }`} />
+              <div>
+                <h3 className={`font-semibold mb-2 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Smart Shopping</h3>
+                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  AI-powered intent builder to find exactly what you need
+                </p>
+              </div>
+            </div>
+            <div className={`flex items-start gap-4 p-6 rounded-lg transition-colors ${
+              darkMode ? 'bg-gray-700' : 'bg-white'
+            }`}>
+              <FiPackage className={`w-8 h-8 flex-shrink-0 ${
+                darkMode ? 'text-purple-400' : 'text-purple-600'
+              }`} />
+              <div>
+                <h3 className={`font-semibold mb-2 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Inventory Management</h3>
+                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Real-time tracking with AI demand forecasting
+                </p>
+              </div>
+            </div>
+            <div className={`flex items-start gap-4 p-6 rounded-lg transition-colors ${
+              darkMode ? 'bg-gray-700' : 'bg-white'
+            }`}>
+              <FiTrendingUp className={`w-8 h-8 flex-shrink-0 ${
+                darkMode ? 'text-blue-400' : 'text-blue-600'
+              }`} />
+              <div>
+                <h3 className={`font-semibold mb-2 ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Analytics & Insights</h3>
+                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Comprehensive analytics for better decisions
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Role-Based Panels Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <h2 className={`text-4xl font-bold text-center mb-12 ${
           darkMode ? 'text-white' : 'text-gray-900'
-        }`}>Features</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className={`card text-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}`}>
-            <FiShoppingBag className={`w-14 h-14 mx-auto mb-4 ${
-              darkMode ? 'text-blue-400' : 'text-blue-600'
-            }`} />
-            <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Smart Shopping</h3>
-            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              AI-powered intent builder helps you find exactly what you need with natural language queries.
-            </p>
+        }`}>Tailored Solutions for Everyone</h2>
+        
+        <div className="space-y-8">
+          {/* Consumer Panel */}
+          <div className={`rounded-lg overflow-hidden shadow-lg transition-colors ${
+            darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <div className="bg-gradient-to-r from-blue-600 to-blue-500 px-8 py-6">
+              <div className="flex items-center gap-4">
+                <FiShoppingBag className="w-8 h-8 text-white" />
+                <div>
+                  <h3 className="text-2xl font-bold text-white">For Consumers</h3>
+                  <p className="text-blue-100">Browse & discover products with ease</p>
+                </div>
+              </div>
+            </div>
+            <div className={`px-8 py-6 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+              <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Shop from a wide variety of products offered by multiple store owners and manufacturers. 
+                Use our AI-powered search to find exactly what you're looking for with natural language queries. 
+                Track your purchases, manage receipts, and enjoy a seamless shopping experience on a unified platform.
+              </p>
+            </div>
           </div>
-          <div className={`card text-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}`}>
-            <FiPackage className={`w-14 h-14 mx-auto mb-4 ${
-              darkMode ? 'text-purple-400' : 'text-purple-600'
-            }`} />
-            <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Inventory Management</h3>
-            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Real-time inventory tracking with AI demand forecasting to optimize stock levels.
-            </p>
+
+          {/* Store Owner Panel */}
+          <div className={`rounded-lg overflow-hidden shadow-lg transition-colors ${
+            darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <div className="bg-gradient-to-r from-purple-600 to-purple-500 px-8 py-6">
+              <div className="flex items-center gap-4">
+                <FiBarChart className="w-8 h-8 text-white" />
+                <div>
+                  <h3 className="text-2xl font-bold text-white">For Store Owners</h3>
+                  <p className="text-purple-100">Manage your store efficiently</p>
+                </div>
+              </div>
+            </div>
+            <div className={`px-8 py-6 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+              <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Manage your entire store operations from inventory tracking to staff management. 
+                Monitor sales analytics, forecast demand using AI, and optimize your product lineup. 
+                Connect with manufacturers to streamline purchases and keep your shelves stocked with the right products at the right time.
+              </p>
+            </div>
           </div>
-          <div className={`card text-center ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}`}>
-            <FiTrendingUp className={`w-14 h-14 mx-auto mb-4 ${
-              darkMode ? 'text-blue-400' : 'text-blue-600'
-            }`} />
-            <h3 className={`text-xl font-semibold mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>Analytics & Insights</h3>
-            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Comprehensive analytics and AI-powered recommendations for better business decisions.
-            </p>
+
+          {/* Manufacturer Panel */}
+          <div className={`rounded-lg overflow-hidden shadow-lg transition-colors ${
+            darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <div className="bg-gradient-to-r from-indigo-600 to-indigo-500 px-8 py-6">
+              <div className="flex items-center gap-4">
+                <FiPackage className="w-8 h-8 text-white" />
+                <div>
+                  <h3 className="text-2xl font-bold text-white">For Manufacturers</h3>
+                  <p className="text-indigo-100">Connect with retailers directly</p>
+                </div>
+              </div>
+            </div>
+            <div className={`px-8 py-6 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+              <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Showcase your products to multiple store owners across the platform. 
+                Manage purchase orders efficiently and track shipments in real-time. 
+                Access valuable insights about demand patterns and optimize your production accordingly.
+              </p>
+            </div>
+          </div>
+
+          {/* Admin Panel */}
+          <div className={`rounded-lg overflow-hidden shadow-lg transition-colors ${
+            darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <div className="bg-gradient-to-r from-red-600 to-red-500 px-8 py-6">
+              <div className="flex items-center gap-4">
+                <FiUsers className="w-8 h-8 text-white" />
+                <div>
+                  <h3 className="text-2xl font-bold text-white">For Administrators</h3>
+                  <p className="text-red-100">Monitor and manage the platform</p>
+                </div>
+              </div>
+            </div>
+            <div className={`px-8 py-6 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
+              <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Oversee all platform activities including user management, store verification, and transaction monitoring. 
+                Access comprehensive analytics to understand platform health and user behavior. 
+                Maintain system integrity and ensure a secure environment for all stakeholders.
+              </p>
+            </div>
           </div>
         </div>
       </div>
