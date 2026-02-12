@@ -291,7 +291,7 @@ export default function Home() {
             <div className={`px-8 py-6 ${darkMode ? 'bg-gray-800' : 'bg-gray-50'}`}>
               <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                 Shop from a wide variety of products offered by multiple store owners and manufacturers. 
-                Use our AI-powered search to find exactly what you're looking for with natural language queries. 
+                Use our AI-powered search to find exactly what you&rsquo;re looking for with natural language queries. 
                 Track your purchases, manage receipts, and enjoy a seamless shopping experience on a unified platform.
               </p>
             </div>

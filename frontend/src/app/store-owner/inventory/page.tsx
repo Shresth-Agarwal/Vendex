@@ -484,7 +484,7 @@ export default function InventoryPage() {
           </div>
         ) : (
           <div className="text-center py-8 text-gray-600 dark:text-gray-300">
-            <p>No forecasts available. Click "Load Forecasts" to generate predictions.</p>
+            <p>No forecasts available. Click &quot;Load Forecasts&quot; to generate predictions.</p>
           </div>
         )}
       </div>
