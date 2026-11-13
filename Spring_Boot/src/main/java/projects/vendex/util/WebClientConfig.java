@@ -11,6 +11,8 @@ public class WebClientConfig {
     public WebClient inventoryMlWebClient() {
         return WebClient.builder()
                 .baseUrl("http://localhost:8000")
+                .filter(WebClientLoggingFilter.logRequest())
+                .filter(WebClientLoggingFilter.logResponse())
                 .build();
     }
 
@@ -18,6 +20,8 @@ public class WebClientConfig {
     public WebClient customerAgentWebClient() {
         return WebClient.builder()
                 .baseUrl("http://localhost:8000")
+                .filter(WebClientLoggingFilter.logRequest())
+                .filter(WebClientLoggingFilter.logResponse())
                 .build();
     }
 
@@ -25,6 +29,8 @@ public class WebClientConfig {
     public WebClient fastApiWebClient() {
         return WebClient.builder()
                 .baseUrl("http://localhost:8000")
+                .filter(WebClientLoggingFilter.logRequest())
+                .filter(WebClientLoggingFilter.logResponse())
                 .build();
     }
 
@@ -32,6 +38,8 @@ public class WebClientConfig {
     public WebClient mlWebClient() {
         return WebClient.builder()
                 .baseUrl("http://localhost:8000")
+                .filter(WebClientLoggingFilter.logRequest())
+                .filter(WebClientLoggingFilter.logResponse())
                 .build();
     }
 }

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vendex - Global Supply Chain Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-container": "#9ea1a1",
+                      "surface-container-highest": "#e4e2e2",
+                      "on-tertiary-fixed": "#191c1d",
+                      "on-error": "#ffffff",
+                      "inverse-surface": "#303031",
+                      "surface": "#fbf9f8",
+                      "on-surface-variant": "#41484b",
+                      "surface-container-high": "#e9e8e7",
+                      "on-secondary": "#ffffff",
+                      "on-primary-container": "#78a8b9",
+                      "primary": "#002630",
+                      "inverse-on-surface": "#f2f0f0",
+                      "surface-variant": "#e4e2e2",
+                      "on-primary": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "surface-dim": "#dbdad9",
+                      "inverse-primary": "#9ecee0",
+                      "outline-variant": "#c0c8cb",
+                      "on-background": "#1b1c1c",
+                      "primary-fixed": "#baeafd",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "secondary": "#5f5e5e",
+                      "surface-tint": "#356575",
+                      "primary-container": "#003d4c",
+                      "surface-container": "#efeded",
+                      "error": "#ba1a1a",
+                      "secondary-container": "#e5e2e1",
+                      "surface-container-lowest": "#ffffff",
+                      "on-surface": "#1b1c1c",
+                      "on-secondary-fixed-variant": "#474646",
+                      "primary-fixed-dim": "#9ecee0",
+                      "tertiary-fixed-dim": "#c4c7c7",
+                      "on-primary-fixed": "#001f28",
+                      "on-secondary-container": "#656464",
+                      "outline": "#71787c",
+                      "on-secondary-fixed": "#1c1b1b",
+                      "on-tertiary-fixed-variant": "#444748",
+                      "tertiary-fixed": "#e1e3e3",
+                      "tertiary": "#1f2323",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed-variant": "#194d5c",
+                      "secondary-fixed": "#e5e2e1",
+                      "surface-container-low": "#f5f3f3",
+                      "tertiary-container": "#353838",
+                      "background": "#fbf9f8",
+                      "surface-bright": "#fbf9f8",
+                      "error-container": "#ffdad6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "md": "24px",
+                      "xl": "80px",
+                      "base": "8px",
+                      "margin": "32px",
+                      "xs": "4px",
+                      "sm": "12px",
+                      "lg": "48px",
+                      "gutter": "24px"
+              },
+              "fontFamily": {
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "button": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-xl": [
+                              "40px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.5",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "button": [
+                              "14px",
+                              {
+                                      "lineHeight": "1",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<nav class="bg-white dark:bg-slate-950 docked full-width top-0 sticky z-50 border-b border-[#F5F7F7] dark:border-slate-800 flat no shadows font-['Inter'] text-sm tracking-tight text-[#003D4C] dark:text-teal-500">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-black text-[#121212] dark:text-white tracking-tighter">
+                Vendex
+            </div>
+<div class="hidden md:flex space-x-8 items-center">
+<a class="text-[#121212]/60 dark:text-slate-400 hover:text-[#121212] dark:hover:text-white transition-colors hover:bg-[#F5F7F7] dark:hover:bg-slate-900 transition-all active:scale-[0.98] transition-transform duration-150 px-3 py-2 rounded-DEFAULT" href="#">Marketplace</a>
+<a class="text-[#121212]/60 dark:text-slate-400 hover:text-[#121212] dark:hover:text-white transition-colors hover:bg-[#F5F7F7] dark:hover:bg-slate-900 transition-all active:scale-[0.98] transition-transform duration-150 px-3 py-2 rounded-DEFAULT" href="#">Command Center</a>
+<a class="text-[#121212]/60 dark:text-slate-400 hover:text-[#121212] dark:hover:text-white transition-colors hover:bg-[#F5F7F7] dark:hover:bg-slate-900 transition-all active:scale-[0.98] transition-transform duration-150 px-3 py-2 rounded-DEFAULT" href="#">Pipeline</a>
+<a class="text-[#121212]/60 dark:text-slate-400 hover:text-[#121212] dark:hover:text-white transition-colors hover:bg-[#F5F7F7] dark:hover:bg-slate-900 transition-all active:scale-[0.98] transition-transform duration-150 px-3 py-2 rounded-DEFAULT" href="#">Resources</a>
+</div>
+<div class="flex items-center space-x-4">
+<a class="hidden md:block font-button text-button text-[#121212] border border-[#121212] px-4 py-2 rounded-DEFAULT hover:bg-[#F5F7F7] transition-colors" href="#">Login</a>
+<button class="bg-primary-container text-white font-button text-button px-6 py-2 rounded-DEFAULT hover:opacity-90 transition-opacity">Portal Access</button>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center">
+<!-- Hero Section -->
+<section class="w-full max-w-7xl mx-auto px-6 py-xl md:py-[120px] flex flex-col items-center text-center gap-margin">
+<h1 class="font-headline-xl text-headline-xl max-w-4xl text-[#121212]">
+                Modernizing the Global Supply Chain.
+            </h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-2xl">
+                Vendex connects manufacturers, store owners, and consumers through a unified, high-performance platform designed for total visibility and operational precision.
+            </p>
+<div class="flex gap-4 mt-sm">
+<button class="bg-primary-container text-white font-button text-button px-8 py-3 rounded-DEFAULT hover:opacity-90 transition-opacity shadow-sm">Portal Access</button>
+<button class="font-button text-button text-[#121212] border border-[#121212] px-8 py-3 rounded-DEFAULT hover:bg-[#F5F7F7] transition-colors">Login</button>
+</div>
+</section>
+<!-- The Flow Section -->
+<section class="w-full bg-[#F5F7F7] py-xl border-y border-outline-variant/30">
+<div class="max-w-7xl mx-auto px-6 flex flex-col gap-margin">
+<div class="text-center">
+<h2 class="font-headline-md text-headline-md text-[#121212]">The Continuous Loop</h2>
+<p class="font-body-md text-body-md text-secondary mt-xs">End-to-end visibility from production to purchase.</p>
+</div>
+<div class="relative w-full py-md mt-md">
+<!-- Flow Line -->
+<div class="hidden md:block absolute top-1/2 left-0 w-full h-[1px] bg-[#121212] -translate-y-1/2 z-0"></div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-margin relative z-10">
+<!-- Step 1 -->
+<div class="bg-white border border-[#121212] rounded-DEFAULT p-md flex flex-col items-center text-center gap-sm">
+<div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">factory</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-[#121212]">Manufacturer</h3>
+<p class="font-body-sm text-body-sm text-secondary">Source materials, manage production lines, and dispatch inventory with real-time tracking.</p>
+</div>
+<!-- Step 2 -->
+<div class="bg-white border border-[#121212] rounded-DEFAULT p-md flex flex-col items-center text-center gap-sm">
+<div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">store</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-[#121212]">Store Owner</h3>
+<p class="font-body-sm text-body-sm text-secondary">Monitor stock levels, forecast demand, and receive shipments through the Command Center.</p>
+</div>
+<!-- Step 3 -->
+<div class="bg-white border border-[#121212] rounded-DEFAULT p-md flex flex-col items-center text-center gap-sm">
+<div class="w-12 h-12 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">shopping_bag</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-[#121212]">Consumer</h3>
+<p class="font-body-sm text-body-sm text-secondary">Access transparent product origins and availability via the global Marketplace.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Role Previews -->
+<section class="w-full max-w-7xl mx-auto px-6 py-xl flex flex-col gap-xl">
+<div class="text-center max-w-3xl mx-auto mb-md">
+<h2 class="font-headline-lg text-headline-lg text-[#121212]">Tailored Interfaces for Every Role</h2>
+<p class="font-body-md text-body-md text-secondary mt-base">Precision-engineered tools designed specifically for your position in the supply chain.</p>
+</div>
+<!-- Pipeline -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-xl items-center">
+<div class="order-2 lg:order-1 flex flex-col gap-md">
+<div class="inline-flex items-center gap-2 border border-outline-variant bg-surface-container-low px-3 py-1 rounded-full w-fit">
+<span class="material-symbols-outlined text-sm text-primary-container">factory</span>
+<span class="font-label-md text-label-md text-primary-container uppercase tracking-wider">Manufacturer</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-[#121212]">The Pipeline</h3>
+<p class="font-body-md text-body-md text-secondary">Complete oversight of production schedules and outbound logistics. Track yields, manage supplier inputs, and ensure delivery SLAs are met with predictive analytics.</p>
+<a class="font-button text-button text-primary-container flex items-center gap-2 mt-xs hover:opacity-70 transition-opacity w-fit" href="#">
+                        Explore Pipeline <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+<div class="order-1 lg:order-2 bg-surface-container-high border border-outline-variant rounded-lg p-4 h-[320px] flex items-center justify-center relative overflow-hidden group">
+<!-- Abstract representation of UI -->
+<img alt="Abstract rendering of a digital dashboard showing manufacturing metrics with lines and charts on a dark background" class="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700" data-alt="Abstract rendering of a digital dashboard showing manufacturing metrics with lines and charts on a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPNBvvASSr1FzPRvHNbkespFVVVdh2f2n_btXm1YGYC_kJ09nuTfeUnVl0qP25cl0IbRbXqSPW2CzK4gzWqTTn-jZB5qXy30-XPngN5SIsbhcPH0b__knxCF3icwR7lc6cKfJOxYrnm9SLv6oOez16wO-TsT8wLalGJxiZDjBc-AUBuG-2Nr8f8B77A4XdoCHN_9sQaA_nAEM4ge2y_JqIqL48UKsHkFtubfROJR9FpUj4FM-eYgUdf2vzuRxbGLjtalEtcjz2G-wH"/>
+<div class="absolute inset-0 bg-gradient-to-tr from-surface/90 to-surface/40"></div>
+<div class="relative z-10 w-full max-w-sm bg-white border border-[#121212] rounded-DEFAULT p-sm shadow-sm">
+<div class="flex justify-between items-center mb-sm pb-xs border-b border-outline-variant/30">
+<div class="font-label-md text-label-md text-[#121212]">Production Output</div>
+<div class="text-primary-container font-label-md text-label-md">+12.4%</div>
+</div>
+<div class="h-24 bg-surface-container-low border border-outline-variant flex items-end p-2 gap-1">
+<div class="w-1/6 bg-primary-container h-[40%]"></div>
+<div class="w-1/6 bg-primary-container h-[60%]"></div>
+<div class="w-1/6 bg-primary-container h-[30%]"></div>
+<div class="w-1/6 bg-primary-container h-[80%]"></div>
+<div class="w-1/6 bg-[#121212] h-[100%]"></div>
+<div class="w-1/6 bg-primary-container h-[70%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Command Center -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-xl items-center mt-lg">
+<div class="order-1 bg-surface-container-high border border-outline-variant rounded-lg p-4 h-[320px] flex items-center justify-center relative overflow-hidden group">
+<img alt="Clean modern warehouse interior with high shelving and bright lighting in a cool blue tone" class="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-luminosity group-hover:scale-105 transition-transform duration-700" data-alt="Clean modern warehouse interior with high shelving and bright lighting in a cool blue tone" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmGp1ijP9G50BC4cRrpPtJCEUPBQaPX-Ia9HQkzkGCS6ZO76msEFieOHkYuu-H1h7Z-TL-LGtS7AAadvPlKeJlPZrFO6zRoGuBSkItXwhI-nQeT3arI0Om2aquXvrvQOKNZFT6XhpwefkwmpVSbYfds3UiA2lHQXsQcrKmM5FTqJO_5P2hCOViklqnnsoY9US7HaVhvHoQh6dOp3B0uwtzHeAnl7bF-gT177gTNtD7QkKlrpmiwnm8uchSLw-zNaNsgcPpv0tvrkYN"/>
+<div class="absolute inset-0 bg-gradient-to-tl from-surface/90 to-surface/40"></div>
+<div class="relative z-10 w-full max-w-sm bg-white border border-[#121212] rounded-DEFAULT p-sm shadow-sm flex flex-col gap-sm">
+<div class="font-label-md text-label-md text-[#121212] pb-xs border-b border-outline-variant/30">Active Shipments</div>
+<div class="flex items-center justify-between p-2 border border-outline-variant bg-surface-container-lowest">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-[#121212]"></div>
+<span class="font-body-sm text-body-sm text-[#121212]">PO-8492</span>
+</div>
+<span class="font-label-md text-label-md text-secondary">In Transit</span>
+</div>
+<div class="flex items-center justify-between p-2 border border-outline-variant bg-surface-container-lowest">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-primary-container"></div>
+<span class="font-body-sm text-body-sm text-[#121212]">PO-8493</span>
+</div>
+<span class="font-label-md text-label-md text-secondary">Delivered</span>
+</div>
+</div>
+</div>
+<div class="order-2 flex flex-col gap-md">
+<div class="inline-flex items-center gap-2 border border-outline-variant bg-surface-container-low px-3 py-1 rounded-full w-fit">
+<span class="material-symbols-outlined text-sm text-primary-container">store</span>
+<span class="font-label-md text-label-md text-primary-container uppercase tracking-wider">Store Owner</span>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-[#121212]">Command Center</h3>
+<p class="font-body-md text-body-md text-secondary">Consolidate your operations. View real-time inventory levels, automate reordering, and track inbound freight with high-fidelity mapping and status alerts.</p>
+<a class="font-button text-button text-primary-container flex items-center gap-2 mt-xs hover:opacity-70 transition-opacity w-fit" href="#">
+                        Explore Command Center <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#F5F7F7] dark:bg-slate-900 full-width border-t border-t border-[#121212]/10 dark:border-slate-800 flat no shadows font-['Inter'] text-xs uppercase tracking-widest text-[#003D4C] dark:text-teal-500 mt-xl">
+<div class="flex flex-col md:flex-row justify-between items-center w-full px-8 py-12 max-w-7xl mx-auto space-y-4 md:space-y-0">
+<div class="text-lg font-bold text-[#121212] dark:text-white">
+                Vendex
+            </div>
+<div class="flex flex-wrap justify-center gap-6">
+<a class="text-[#121212]/50 dark:text-slate-500 hover:text-[#121212] hover:opacity-70 transition-opacity focus:outline-none focus:ring-1 focus:ring-[#003D4C]" href="#">Terms of Service</a>
+<a class="text-[#121212]/50 dark:text-slate-500 hover:text-[#121212] hover:opacity-70 transition-opacity focus:outline-none focus:ring-1 focus:ring-[#003D4C]" href="#">Privacy Policy</a>
+<a class="text-[#121212]/50 dark:text-slate-500 hover:text-[#121212] hover:opacity-70 transition-opacity focus:outline-none focus:ring-1 focus:ring-[#003D4C]" href="#">Compliance</a>
+<a class="text-[#121212]/50 dark:text-slate-500 hover:text-[#121212] hover:opacity-70 transition-opacity focus:outline-none focus:ring-1 focus:ring-[#003D4C]" href="#">System Status</a>
+</div>
+<div class="text-[#121212]/50 dark:text-slate-500">
+                © 2024 Vendex. Global Supply Chain Intelligence.
+            </div>
+</div>
+</footer>
+</body></html>

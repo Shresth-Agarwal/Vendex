@@ -4,5 +4,5 @@ import projects.vendex.dtos.RosterDecisionDto;
 import projects.vendex.dtos.RosterInputDto;
 
 public interface RosterDecisionProvider {
-    RosterDecisionDto generate(RosterInputDto input);
+    RosterDecisionDto generate(RosterInputDto input) throws java.util.concurrent.TimeoutException;
 }
