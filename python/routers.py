@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from .pydantic_classes.basemodels import SalesHistory, ChatRequest, DecisionPayload, ForecastAndDecideRequest, StaffAvailability, ReceiptRequest, SourcingRequest
 from .intent import vendex_intelligent_agent
 import json
+import logging
 from .demand import get_forecast
 from .decision import inventory_agent_decision
 from .assign import assign_staff_to_shifts
@@ -9,7 +10,18 @@ from .receipt import create_receipt_pdf
 from .recommender import suggest_best_manufacturer
 from fastapi.responses import FileResponse
 
+# Configure logger
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api")
+
+@router.post("/debug/raw-request")
+async def debug_raw_request(request_data: dict):
+    """Debug endpoint to see raw incoming requests"""
+    logger.info(f"[DEBUG] Raw request received:")
+    logger.info(f"[DEBUG] Keys: {list(request_data.keys())}")
+    logger.info(f"[DEBUG] Full payload: {json.dumps(request_data, indent=2, default=str)}")
+    return {"success": True, "received_keys": list(request_data.keys())}
 
 @router.post("/forecast", tags=["Inventory"])
 def forecast(payload: SalesHistory):
@@ -50,11 +62,21 @@ async def process_intent(payload: ChatRequest):
     
 @router.post("/assign-staff", tags=["Staffing Agent"])
 async def assign_staff(payload: StaffAvailability):
+    logger.info(f"[ASSIGN-STAFF] Request received for date: {payload.date}")
+    logger.info(f"[ASSIGN-STAFF] Payload keys: {list(payload.__dict__.keys())}")
+    logger.info(f"[ASSIGN-STAFF] Number of shifts: {len(payload.shifts)}")
+    logger.info(f"[ASSIGN-STAFF] Number of staff: {len(payload.staff)}")
+    
     try:
         data = payload.model_dump()
+        logger.debug(f"[ASSIGN-STAFF] Converted to dict successfully")
+        
         assignment_plan = assign_staff_to_shifts(data)
+        logger.info(f"[ASSIGN-STAFF] Assignments generated: {len(assignment_plan.get('assignments', []))}")
+        
         return assignment_plan
     except Exception as e:
+        logger.error(f"[ASSIGN-STAFF] Error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/generate-receipt", tags=["Receipt Generator"])
@@ -84,14 +106,23 @@ async def generate_receipt(payload: ReceiptRequest):
 
 @router.post("/sourcing/recommend", tags=["Sourcing Recommender"])
 async def recommend_manufacturer(payload: SourcingRequest):
-    # 1. Convert Pydantic to Dict
-    data = payload.model_dump()
-    
-    # 2. Run the scoring logic
-    winner = suggest_best_manufacturer(data)
-    
-    if not winner or "error" in winner:
-        raise HTTPException(status_code=404, detail="No suitable manufacturer found meeting Minimum Order Quantities.")
+    try:
+        # 1. Convert Pydantic to Dict
+        data = payload.model_dump()
+        
+        # 2. Run the scoring logic
+        winner = suggest_best_manufacturer(data)
+        
+        if not winner:
+            raise HTTPException(status_code=500, detail="Recommender returned no result")
+        
+        if "error" in winner:
+            raise HTTPException(status_code=400, detail=winner["error"])
 
-    # 3. Return the recommendation (recommender already formats it)
-    return winner
+        # 3. Return the recommendation (recommender already formats it)
+        return winner
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in manufacturer recommendation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Recommendation error: {str(e)}")

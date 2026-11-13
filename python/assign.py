@@ -34,7 +34,7 @@ def assign_staff_to_shifts(input_data):
         { "shiftId": 1, "staffId": 101, "confidence": 0.95 }
       ],
       "coveragePercentage": 100.0,
-      "overtimeRisk": false,
+      "overtimeRisk": false
     }
     """
 
@@ -53,6 +53,13 @@ def assign_staff_to_shifts(input_data):
           content = content[4:]
       content = content.strip()
       
-      return json.loads(content)
+      # Remove any remaining markdown or text before/after JSON
+      if "{" in content:
+        content = content[content.find("{"):content.rfind("}")+1]
+      
+      result = json.loads(content)
+      return result
+    except json.JSONDecodeError as e:
+      raise Exception(f"JSON Parsing Error: invalid response format - {str(e)}")
     except Exception as e:
       raise Exception(f"Staffing Agent AI Error: {str(e)}")

@@ -1,20 +1,27 @@
 package projects.vendex.services;
 
-import projects.vendex.dtos.*;
-import projects.vendex.entities.Staff;
-import projects.vendex.entities.StaffAvailability;
-import projects.vendex.entities.Shift;
-import projects.vendex.providers.RosterDecisionProvider;
-import projects.vendex.repositories.StaffAvailabilityRepository;
-import projects.vendex.repositories.StaffRepository;
-import projects.vendex.repositories.ShiftRepository;
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
+import projects.vendex.dtos.AvailabilitySlotDto;
+import projects.vendex.dtos.RosterDecisionDto;
+import projects.vendex.dtos.RosterInputDto;
+import projects.vendex.dtos.RosterResponseDto;
+import projects.vendex.dtos.ShiftAssignmentDecisionDto;
+import projects.vendex.dtos.ShiftAssignmentDto;
+import projects.vendex.dtos.ShiftInputDto;
+import projects.vendex.dtos.StaffInputDto;
+import projects.vendex.entities.Shift;
+import projects.vendex.entities.Staff;
+import projects.vendex.entities.StaffAvailability;
+import projects.vendex.providers.RosterDecisionProvider;
+import projects.vendex.repositories.ShiftRepository;
+import projects.vendex.repositories.StaffAvailabilityRepository;
+import projects.vendex.repositories.StaffRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +32,7 @@ public class RosterService {
     private final ShiftRepository shiftRepository;
     private final RosterDecisionProvider decisionProvider;
 
-    public RosterResponseDto generateRoster(LocalDate date) {
+    public RosterResponseDto generateRoster(LocalDate date) throws java.util.concurrent.TimeoutException {
 
         // 1. Fetch open shifts for the date
         List<Shift> openShifts =
